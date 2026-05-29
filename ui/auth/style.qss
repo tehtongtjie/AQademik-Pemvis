@@ -213,3 +213,62 @@ QWidget#rightPanel {
 QStackedWidget#transparentStack {
     background: transparent;
 }
+QFrame#dashboardHeader{
+    background:white;
+    border-radius:16px;
+    border:1px solid #E2E8F0;
+}
+
+QFrame#dashboardCard{
+    background:white;
+    border-radius:16px;
+    border:1px solid #E2E8F0;
+}
+
+QFrame#profileCard{
+    background:white;
+    border:1px solid #E2E8F0;
+    border-radius:14px;
+}
+
+QLabel#profileName{
+    color:#0F172A;
+    font-size:14px;
+    font-weight:700;
+    background:transparent;
+}
+
+QLabel#profileRole{
+    color:#64748B;
+    font-size:12px;
+    background:transparent;
+}
+
+QLabel#profileAvatar{
+    background:#DBEAFE;
+    border-radius:20px;
+    min-width:40px;
+    max-width:40px;
+    min-height:40px;
+    max-height:40px;
+    font-size:18px;
+}
+
+QLabel#kpiIcon{
+    background:transparent;
+    font-size:24px;
+}
+
+QLabel#kpiTitle{
+    background:transparent;
+    color:#64748B;
+    font-size:13px;
+    font-weight:600;
+}
+
+QLabel#kpiValue{
+    background:transparent;
+    color:#1E293B;
+    font-size:28px;
+    font-weight:800;
+}
