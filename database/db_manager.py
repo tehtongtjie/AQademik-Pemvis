@@ -63,17 +63,14 @@ def register_user(nama: str, nim_nip: str, email: str, password: str, role: str)
         return False, err
 
     try:
-        # Cek email sudah terdaftar
         cek_email = supabase.table("users").select("id").eq("email", email).execute()
         if cek_email.data:
             return False, "Email sudah terdaftar."
 
-        # Cek NIM/NIP sudah terdaftar
         cek_nim = supabase.table("users").select("id").eq("nim_nip", nim_nip).execute()
         if cek_nim.data:
             return False, "NIM/NIP sudah terdaftar."
 
-        # Simpan ke Supabase
         supabase.table("users").insert({
             "nama":     nama,
             "nim_nip":  nim_nip,
@@ -116,3 +113,148 @@ def login_user(email: str, password: str):
 
     except Exception as e:
         return False, f"Terjadi kesalahan: {e}"
+
+
+# ==========================================================================
+# ─── UPLOAD PDF MAHASISWA (kumpul tugas) ──────────────────────────────────
+# ==========================================================================
+
+def submit_tugas(tugas_id: int, mahasiswa_id: int, file_path: str, catatan: str = ""):
+    """Mahasiswa upload PDF untuk mengumpulkan tugas."""
+    try:
+        file_name    = os.path.basename(file_path)
+        storage_path = f"{mahasiswa_id}/{tugas_id}/{file_name}"
+
+        with open(file_path, "rb") as f:
+            supabase.storage.from_("tugas-files").upload(
+                path=storage_path,
+                file=f,
+                file_options={"content-type": "application/pdf"}
+            )
+
+        file_url = supabase.storage.from_("tugas-files").get_public_url(storage_path)
+
+        cek = supabase.table("pengumpulan_tugas") \
+                      .select("id") \
+                      .eq("tugas_id", tugas_id) \
+                      .eq("mahasiswa_id", mahasiswa_id) \
+                      .execute()
+
+        if cek.data:
+            supabase.table("pengumpulan_tugas").update({
+                "file_url":  file_url,
+                "file_name": file_name,
+                "status":    "selesai",
+                "catatan":   catatan
+            }).eq("tugas_id", tugas_id).eq("mahasiswa_id", mahasiswa_id).execute()
+        else:
+            supabase.table("pengumpulan_tugas").insert({
+                "tugas_id":     tugas_id,
+                "mahasiswa_id": mahasiswa_id,
+                "file_url":     file_url,
+                "file_name":    file_name,
+                "status":       "selesai",
+                "catatan":      catatan
+            }).execute()
+
+        return True, "Tugas berhasil dikumpulkan!"
+
+    except Exception as e:
+        return False, f"Terjadi kesalahan: {e}"
+
+
+def update_status_tugas(tugas_id: int, mahasiswa_id: int, status: str):
+    """Update status pengerjaan tugas tanpa upload file."""
+    if status not in ("belum_dikerjakan", "sedang_dikerjakan", "selesai"):
+        return False, "Status tidak valid."
+    try:
+        cek = supabase.table("pengumpulan_tugas") \
+                      .select("id") \
+                      .eq("tugas_id", tugas_id) \
+                      .eq("mahasiswa_id", mahasiswa_id) \
+                      .execute()
+
+        if cek.data:
+            supabase.table("pengumpulan_tugas").update({
+                "status": status
+            }).eq("tugas_id", tugas_id).eq("mahasiswa_id", mahasiswa_id).execute()
+        else:
+            supabase.table("pengumpulan_tugas").insert({
+                "tugas_id":     tugas_id,
+                "mahasiswa_id": mahasiswa_id,
+                "status":       status
+            }).execute()
+
+        return True, "Status berhasil diupdate!"
+
+    except Exception as e:
+        return False, f"Terjadi kesalahan: {e}"
+
+
+# ==========================================================================
+# ─── UPLOAD PDF DOSEN (materi kuliah) ─────────────────────────────────────
+# ==========================================================================
+
+def upload_materi(file_path: str, dosen_id: int, judul: str, deskripsi: str = "", jadwal_id: int = None):
+    """Dosen upload PDF materi kuliah."""
+    try:
+        file_name    = os.path.basename(file_path)
+        storage_path = f"materi/{dosen_id}/{file_name}"
+
+        with open(file_path, "rb") as f:
+            supabase.storage.from_("tugas-files").upload(
+                path=storage_path,
+                file=f,
+                file_options={"content-type": "application/pdf"}
+            )
+
+        file_url = supabase.storage.from_("tugas-files").get_public_url(storage_path)
+
+        supabase.table("materi").insert({
+            "judul":     judul,
+            "deskripsi": deskripsi,
+            "file_url":  file_url,
+            "file_name": file_name,
+            "dosen_id":  dosen_id,
+            "jadwal_id": jadwal_id
+        }).execute()
+
+        return True, "Materi berhasil diupload!"
+
+    except Exception as e:
+        return False, f"Gagal upload materi: {e}"
+
+
+def get_materi(dosen_id: int = None):
+    """Ambil semua materi, bisa filter by dosen."""
+    try:
+        query = supabase.table("materi").select("*, users(nama)")
+        if dosen_id:
+            query = query.eq("dosen_id", dosen_id)
+        res = query.order("created_at", desc=True).execute()
+        return True, res.data
+    except Exception as e:
+        return False, f"Gagal ambil materi: {e}"
+
+
+def hapus_materi(materi_id: int, dosen_id: int):
+    """Hapus materi beserta filenya (hanya dosen pemilik)."""
+    try:
+        res = supabase.table("materi").select("*") \
+                      .eq("id", materi_id) \
+                      .eq("dosen_id", dosen_id) \
+                      .execute()
+
+        if not res.data:
+            return False, "Materi tidak ditemukan atau bukan milik Anda."
+
+        materi       = res.data[0]
+        storage_path = f"materi/{dosen_id}/{materi['file_name']}"
+
+        supabase.storage.from_("tugas-files").remove([storage_path])
+        supabase.table("materi").delete().eq("id", materi_id).execute()
+
+        return True, "Materi berhasil dihapus!"
+
+    except Exception as e:
+        return False, f"Gagal hapus materi: {e}"
