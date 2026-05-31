@@ -174,7 +174,6 @@ class LoginPage(QWidget):
         self.lbl_status.hide()
         ok, result = login_user(self.f_email.value(), self.f_password.value())
         if ok:
-            # Tampilkan pop-up informasi sukses login sebelum dialihkan ke main app
             role_label = "Dosen" if result["role"] == "dosen" else "Mahasiswa"
             QMessageBox.information(
                 self, "Login Berhasil",
@@ -182,7 +181,9 @@ class LoginPage(QWidget):
             )
             self.f_email.clear()
             self.f_password.clear()
-            self.on_login_success(result)
+            # Panggil callback yang sudah diset
+            if self.on_login_success:
+                self.on_login_success(result)
         else:
             self.lbl_status.setText(f"⚠ {result}")
             self.lbl_status.show()
@@ -295,7 +296,8 @@ class AuthWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("AkademiQ — Autentikasi")
         self.resize(920, 620)          
-        self.setMinimumSize(920, 620)  
+        self.setMinimumSize(920, 620)
+        self.on_login_success = None  # Initialize callback
         self._build_ui()
 
     def _build_ui(self):
@@ -389,4 +391,9 @@ class AuthWindow(QMainWindow):
         root_layout.addWidget(right)
 
     def _on_login_success(self, user: dict):
-        pass
+        """Callback dari LoginPage - memanggil callback eksternal"""
+        print(f"[AUTH] Login sukses untuk {user.get('nama')}")
+        if self.on_login_success:
+            self.on_login_success(user)
+        else:
+            print("[AUTH] Tidak ada callback yang diset!")

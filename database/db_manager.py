@@ -1,8 +1,16 @@
 import sqlite3
 import hashlib
 import os
+from PySide6.QtCore import QObject, Signal
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "akademiq.db")
+
+
+class DatabaseSignals(QObject):
+    data_changed = Signal()
+
+
+db_signals = DatabaseSignals()
 
 
 def get_connection():
@@ -16,7 +24,6 @@ def hash_password(password: str) -> str:
 
 
 def init_db():
-    """Membuat semua tabel yang diperlukan"""
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -60,6 +67,21 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (course_id) REFERENCES courses(id),
             UNIQUE(user_id, course_id)
+        )
+    """)
+    
+    # Tabel schedules (jadwal kuliah)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS schedules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            day_of_week TEXT NOT NULL,
+            course_name TEXT NOT NULL,
+            lecturer TEXT,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            room TEXT,
+            color TEXT DEFAULT '#3498db',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     
@@ -139,9 +161,39 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         _insert_sample_assignments(cursor)
     
+    # Insert sample schedules if empty
+    cursor.execute("SELECT COUNT(*) FROM schedules")
+    if cursor.fetchone()[0] == 0:
+        _insert_sample_schedules(cursor)
+    
+    # Insert sample courses if empty
+    cursor.execute("SELECT COUNT(*) FROM courses")
+    if cursor.fetchone()[0] == 0:
+        _insert_sample_courses(cursor)
+    
     conn.commit()
     conn.close()
 
+def _insert_sample_schedules(cursor):
+    sample_schedules = [
+        # Senin
+        ('Senin', 'Pemrograman Visual', 'Pahrul Irfan, S.Kom., M.Kom.', '07:00', '09:30', 'D3-04', '#3498db'),
+        ('Senin', 'Ekstraksi Fitur', 'Fitri Bimantoro', '14:30', '16:10', 'D2-02', '#e74c3c'),
+        # Selasa
+        ('Selasa', 'Pemrograman Bergerak', '-', '12:50', '14:30', 'D3-04', '#2ecc71'),
+        # Rabu
+        ('Rabu', 'Logika Fuzzy', 'Mohammad Zaenuddin Hamidi', '07:00', '08:40', 'A3-01', '#9b59b6'),
+        ('Rabu', 'Pemodelan dan Simulasi', 'Herliana Rosika, S.Kom., M.Kom.', '09:30', '12:00', 'D3-04', '#f39c12'),
+        # Jumat
+        ('Jumat', 'Pemrosesan Bahasa Alami', 'Dr. Eng. Budi', '07:50', '09:30', 'A3-02', '#1abc9c'),
+        ('Jumat', 'Pembelajaran Mesin', 'Ramaditia', '09:30', '11:10', 'D2-01', '#e67e22'),
+        ('Jumat', 'Jaringan Komputer Lanjut', 'Andy', '13:40', '15:20', 'D2-01', '#27ae60'),
+    ]
+    
+    cursor.executemany("""
+        INSERT INTO schedules (day_of_week, course_name, lecturer, start_time, end_time, room, color)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, sample_schedules)
 
 def _insert_sample_courses(cursor):
     sample_courses = [
@@ -170,7 +222,7 @@ def _insert_sample_courses(cursor):
 
 
 def _insert_sample_materials(cursor):
-    # Get course IDs
+    # Get course ID
     cursor.execute("SELECT id, kode FROM courses")
     courses = {row['kode']: row['id'] for row in cursor.fetchall()}
     
@@ -190,7 +242,6 @@ def _insert_sample_materials(cursor):
 
 
 def _insert_sample_assignments(cursor):
-    """Insert sample assignments"""
     cursor.execute("SELECT id, kode FROM courses")
     courses = {row['kode']: row['id'] for row in cursor.fetchall()}
     
@@ -210,7 +261,6 @@ def _insert_sample_assignments(cursor):
 
 
 # user oriented
-
 def register_user(nama: str, nim_nip: str, email: str, password: str, role: str, phone="", address=""):
     nama = nama.strip()
     nim_nip = nim_nip.strip()
@@ -264,7 +314,6 @@ def login_user(email: str, password: str):
         return True, dict(user)
     return False, "Email atau password salah."
 
-
 def update_user_profile(user_id, name, email, phone, address):
     conn = get_connection()
     cursor = conn.cursor()
@@ -280,7 +329,6 @@ def update_user_profile(user_id, name, email, phone, address):
         return False, str(e)
     finally:
         conn.close()
-
 
 def change_password(user_id, old_password, new_password):
     conn = get_connection()
@@ -302,6 +350,7 @@ def change_password(user_id, old_password, new_password):
             (hash_password(new_password), user_id)
         )
         conn.commit()
+        db_signals.data_changed.emit()
         return True, "Password berhasil diganti!"
     except Exception as e:
         return False, str(e)
@@ -309,7 +358,6 @@ def change_password(user_id, old_password, new_password):
         conn.close()
 
 # Course oriented
-
 def get_all_courses():
     conn = get_connection()
     cursor = conn.cursor()
@@ -317,7 +365,6 @@ def get_all_courses():
     courses = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return courses
-
 
 def get_course_by_id(course_id):
     conn = get_connection()
@@ -327,7 +374,6 @@ def get_course_by_id(course_id):
     conn.close()
     return dict(course) if course else None
 
-
 def get_course_by_enroll_code(enroll_code):
     conn = get_connection()
     cursor = conn.cursor()
@@ -336,26 +382,229 @@ def get_course_by_enroll_code(enroll_code):
     conn.close()
     return dict(course) if course else None
 
+# Schedule
+def get_all_schedules_sync():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, day_of_week, course_name, lecturer, start_time, end_time, room, color
+        FROM schedules
+        ORDER BY 
+            CASE day_of_week
+                WHEN 'Senin' THEN 1
+                WHEN 'Selasa' THEN 2
+                WHEN 'Rabu' THEN 3
+                WHEN 'Kamis' THEN 4
+                WHEN 'Jumat' THEN 5
+                WHEN 'Sabtu' THEN 6
+                WHEN 'Minggu' THEN 7
+            END, start_time
+    ''')
+    result = cursor.fetchall()
+    conn.close()
+    return result
 
-# Enrroll
+def get_user_schedule(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Debug: cek enrolled courses dulu 
+    cursor.execute("""
+        SELECT c.id, c.nama, c.kode
+        FROM courses c
+        JOIN enrollments e ON e.course_id = c.id
+        WHERE e.user_id = ? AND e.status = 'active'
+    """, (user_id,))
+    enrolled_courses = cursor.fetchall()
+    print(f"[DEBUG] Enrolled courses for user {user_id}: {[dict(row) for row in enrolled_courses]}")
+    
+    # Ambil jadwal berdasarkan enrolled courses
+    cursor.execute("""
+        SELECT 
+            s.day_of_week,
+            s.course_name,
+            s.lecturer,
+            s.start_time,
+            s.end_time,
+            s.room
+        FROM schedules s
+        WHERE s.course_name IN (
+            SELECT c.nama
+            FROM courses c
+            JOIN enrollments e ON e.course_id = c.id
+            WHERE e.user_id = ? AND e.status = 'active'
+        )
+        ORDER BY 
+            CASE s.day_of_week
+                WHEN 'Senin' THEN 1
+                WHEN 'Selasa' THEN 2
+                WHEN 'Rabu' THEN 3
+                WHEN 'Kamis' THEN 4
+                WHEN 'Jumat' THEN 5
+                WHEN 'Sabtu' THEN 6
+                WHEN 'Minggu' THEN 7
+            END, 
+            s.start_time
+    """, (user_id,))
+    
+    schedules = [dict(row) for row in cursor.fetchall()]
+    print(f"[DEBUG] Found schedules: {schedules}")
+    
+    conn.close()
+    return schedules
 
-def enroll_user(user_id, course_id):
+def get_user_enrolled_courses_with_schedule(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Get enrolled courses
+    cursor.execute("""
+        SELECT c.* FROM courses c
+        JOIN enrollments e ON c.id = e.course_id
+        WHERE e.user_id = ? AND e.status = 'active'
+        ORDER BY c.nama
+    """, (user_id,))
+    courses = [dict(row) for row in cursor.fetchall()]
+    
+    # Get schedules buat courses nya
+    for course in courses:
+        cursor.execute("""
+            SELECT s.* FROM schedules s
+            WHERE s.course_name = ?
+            ORDER BY 
+                CASE s.day_of_week
+                    WHEN 'Senin' THEN 1
+                    WHEN 'Selasa' THEN 2
+                    WHEN 'Rabu' THEN 3
+                    WHEN 'Kamis' THEN 4
+                    WHEN 'Jumat' THEN 5
+                    WHEN 'Sabtu' THEN 6
+                    WHEN 'Minggu' THEN 7
+                END, s.start_time
+        """, (course['nama'],))
+        course['schedules'] = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    return courses
+
+def get_schedules_for_user(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT DISTINCT s.id, s.day_of_week, s.course_name, s.lecturer, 
+               s.start_time, s.end_time, s.room, s.color
+        FROM schedules s
+        JOIN courses c ON c.nama = s.course_name
+        JOIN enrollments e ON e.course_id = c.id
+        WHERE e.user_id = ? AND e.status = 'active'
+        ORDER BY 
+            CASE s.day_of_week
+                WHEN 'Senin' THEN 1
+                WHEN 'Selasa' THEN 2
+                WHEN 'Rabu' THEN 3
+                WHEN 'Kamis' THEN 4
+                WHEN 'Jumat' THEN 5
+                WHEN 'Sabtu' THEN 6
+                WHEN 'Minggu' THEN 7
+            END, s.start_time
+    ''', (user_id,))
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
+
+def add_schedule(day, course_name, lecturer, start_time, end_time, room, color):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute(
-            "INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)",
-            (user_id, course_id)
-        )
+        cursor.execute('''
+            INSERT INTO schedules (day_of_week, course_name, lecturer, start_time, end_time, room, color)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (day, course_name, lecturer, start_time, end_time, room, color))
         conn.commit()
-        return True, "Berhasil join mata kuliah!"
-    except sqlite3.IntegrityError:
-        return False, "Anda sudah terdaftar di mata kuliah ini!"
+        db_signals.data_changed.emit()
+        return True, cursor.lastrowid
     except Exception as e:
         return False, str(e)
     finally:
         conn.close()
 
+
+def update_schedule(schedule_id, day, course_name, lecturer, start_time, end_time, room, color):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            UPDATE schedules 
+            SET day_of_week=?, course_name=?, lecturer=?, start_time=?, end_time=?, room=?, color=?
+            WHERE id=?
+        ''', (day, course_name, lecturer, start_time, end_time, room, color, schedule_id))
+        conn.commit()
+        db_signals.data_changed.emit()
+        return True, "Schedule updated"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
+
+def delete_schedule(schedule_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM schedules WHERE id=?', (schedule_id,))
+        conn.commit()
+        db_signals.data_changed.emit()
+        return True, "Schedule deleted"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+        
+# Enrroll
+def enroll_user(user_id, course_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Cek apakah sudah terdaftar
+        cursor.execute(
+            "SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND status = 'active'",
+            (user_id, course_id)
+        )
+        existing = cursor.fetchone()
+        
+        if existing:
+            conn.close()
+            return False, "Anda sudah terdaftar di mata kuliah ini!"
+        
+        # Insert enrollment
+        cursor.execute(
+            "INSERT INTO enrollments (user_id, course_id, status) VALUES (?, ?, 'active')",
+            (user_id, course_id)
+        )
+        conn.commit()
+        
+        # Verifikasi apakah berhasil tersimpan
+        cursor.execute(
+            "SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND status = 'active'",
+            (user_id, course_id)
+        )
+        result = cursor.fetchone()
+        
+        if result:
+            conn.close()
+            return True, "Berhasil join mata kuliah!"
+        else:
+            conn.close()
+            return False, "Gagal menyimpan data enrollment!"
+            
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        return False, f"Integrity Error: {str(e)}"
+    except Exception as e:
+        conn.close()
+        return False, f"Error: {str(e)}"
 
 def is_user_enrolled(user_id, course_id):
     conn = get_connection()
@@ -367,7 +616,6 @@ def is_user_enrolled(user_id, course_id):
     result = cursor.fetchone()
     conn.close()
     return result is not None
-
 
 def get_user_enrolled_courses(user_id):
     conn = get_connection()
@@ -382,9 +630,7 @@ def get_user_enrolled_courses(user_id):
     conn.close()
     return courses
 
-
 # Materi oriented
-
 def get_course_materials(course_id):
     conn = get_connection()
     cursor = conn.cursor()
@@ -398,9 +644,7 @@ def get_course_materials(course_id):
 
 
 # Assignment oriented
-
 def get_course_assignments(course_id):
-    """Get all assignments for a course"""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -413,7 +657,6 @@ def get_course_assignments(course_id):
 
 
 def submit_assignment(assignment_id, user_id, file_path, catatan=""):
-    """Submit tugas"""
     conn = get_connection()
     cursor = conn.cursor()
     try:
@@ -428,9 +671,7 @@ def submit_assignment(assignment_id, user_id, file_path, catatan=""):
     finally:
         conn.close()
 
-
 def get_user_submission(assignment_id, user_id):
-    """Get user's submission"""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -443,9 +684,7 @@ def get_user_submission(assignment_id, user_id):
     return dict(submission) if submission else None
 
 # Task oriented (personal tasks + course assignments) buat mhs
-
 def get_all_tasks(user_id):
-    """Get all tasks for a user (personal tasks + course assignments)"""
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -468,37 +707,49 @@ def get_all_tasks(user_id):
     for row in cursor.fetchall():
         personal_tasks.append(dict(row))
     
-    # Get course assignments (from enrolled courses)
+    # Get enrolled course IDs
     cursor.execute("""
-        SELECT 
-            a.id, 
-            a.judul as tugas, 
-            c.nama as matkul, 
-            a.deskripsi,
-            a.deadline_date as deadline, 
-            'Medium' as priority,
-            CASE 
-                WHEN s.id IS NOT NULL AND s.status = 'Done' THEN 'Done'
-                ELSE 'Not Started'
-            END as status,
-            'course' as source,
-            a.course_id
-        FROM assignments a
-        JOIN courses c ON a.course_id = c.id
-        JOIN enrollments e ON e.course_id = c.id
-        LEFT JOIN submissions s ON s.assignment_id = a.id AND s.user_id = ?
+        SELECT c.id, c.nama
+        FROM enrollments e
+        JOIN courses c ON e.course_id = c.id
         WHERE e.user_id = ? AND e.status = 'active'
-        ORDER BY a.deadline_date
-    """, (user_id, user_id))
+    """, (user_id,))
+    enrolled_courses = cursor.fetchall()
+    enrolled_course_ids = [row['id'] for row in enrolled_courses]
+    
+    # Get course assignments dari enrolled courses
     course_tasks = []
-    for row in cursor.fetchall():
-        course_tasks.append(dict(row))
+    if enrolled_course_ids:
+        placeholders = ','.join(['?'] * len(enrolled_course_ids))
+        cursor.execute(f"""
+            SELECT 
+                a.id, 
+                a.judul as tugas, 
+                c.nama as matkul, 
+                a.deskripsi,
+                a.deadline_date as deadline, 
+                'Medium' as priority,
+                CASE 
+                    WHEN s.id IS NOT NULL AND s.status = 'submitted' THEN 'Doing'
+                    WHEN s.id IS NOT NULL AND s.status = 'Done' THEN 'Done'
+                    ELSE 'Not Started'
+                END as status,
+                'course' as source,
+                a.course_id
+            FROM assignments a
+            JOIN courses c ON a.course_id = c.id
+            LEFT JOIN submissions s ON s.assignment_id = a.id AND s.user_id = ?
+            WHERE a.course_id IN ({placeholders})
+            ORDER BY a.deadline_date
+        """, (user_id, *enrolled_course_ids))
+        for row in cursor.fetchall():
+            course_tasks.append(dict(row))
     
     conn.close()
     
-    # Combine both lists
+    # gabung
     all_tasks = personal_tasks + course_tasks
-    # Kemudian urutkan by deadline
+    # urutin dari deadline
     all_tasks.sort(key=lambda x: x.get('deadline', '9999-12-31'))
     
     return all_tasks
@@ -512,12 +763,12 @@ def add_personal_task(user_id, judul, matkul, deskripsi, deadline, priority, sta
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (user_id, judul, matkul, deskripsi, deadline, priority, status))
         conn.commit()
+        db_signals.data_changed.emit()
         return True, cursor.lastrowid
     except Exception as e:
         return False, str(e)
     finally:
         conn.close()
-
 
 def update_personal_task(task_id, user_id, judul, matkul, deskripsi, deadline, priority, status):
     conn = get_connection()
@@ -531,12 +782,12 @@ def update_personal_task(task_id, user_id, judul, matkul, deskripsi, deadline, p
             WHERE id = ? AND user_id = ?
         """, (judul, matkul, deskripsi, deadline, priority, status, task_id, user_id))
         conn.commit()
+        db_signals.data_changed.emit()
         return True, "Task berhasil diupdate"
     except Exception as e:
         return False, str(e)
     finally:
         conn.close()
-
 
 def delete_personal_task(task_id, user_id):
     conn = get_connection()
@@ -544,12 +795,12 @@ def delete_personal_task(task_id, user_id):
     try:
         cursor.execute("DELETE FROM personal_tasks WHERE id = ? AND user_id = ?", (task_id, user_id))
         conn.commit()
+        db_signals.data_changed.emit()
         return True, "Task berhasil dihapus"
     except Exception as e:
         return False, str(e)
     finally:
         conn.close()
-
 
 def update_task_status(task_id, user_id, new_status, source='personal'):
     conn = get_connection()
@@ -566,12 +817,12 @@ def update_task_status(task_id, user_id, new_status, source='personal'):
                 WHERE assignment_id = ? AND user_id = ?
             """, (new_status, task_id, user_id))
         conn.commit()
+        db_signals.data_changed.emit()
         return True, "Status berhasil diupdate"
     except Exception as e:
         return False, str(e)
     finally:
         conn.close()
-
 
 def update_task_priority(task_id, user_id, new_priority, source='personal'):
     if source != 'personal':
@@ -584,6 +835,7 @@ def update_task_priority(task_id, user_id, new_priority, source='personal'):
             UPDATE personal_tasks SET priority = ? WHERE id = ? AND user_id = ?
         """, (new_priority, task_id, user_id))
         conn.commit()
+        db_signals.data_changed.emit()
         return True, "Prioritas berhasil diupdate"
     except Exception as e:
         return False, str(e)
