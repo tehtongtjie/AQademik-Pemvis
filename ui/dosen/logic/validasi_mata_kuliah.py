@@ -2,7 +2,6 @@ def validasi_mata_kuliah(
     kode,
     nama,
     sks,
-    dosen,
     enroll_code
 ):
 
@@ -14,9 +13,6 @@ def validasi_mata_kuliah(
 
     if sks < 1:
         return False, "SKS tidak valid"
-
-    if not dosen.strip():
-        return False, "Nama dosen wajib diisi"
 
     if not enroll_code.strip():
         return False, "Kode join wajib diisi"
