@@ -51,14 +51,6 @@ class DialogMataKuliah(QDialog):
 
         layout.addWidget(self.sks)
 
-        # DOSEN
-
-        layout.addWidget(
-            QLabel("Nama Dosen")
-        )
-
-        self.dosen = QLineEdit()
-        layout.addWidget(self.dosen)
 
         # DESKRIPSI
 

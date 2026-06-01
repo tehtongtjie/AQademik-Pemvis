@@ -29,8 +29,10 @@ DetailMataKuliah
 
 class MataKuliah(QWidget):
 
-    def __init__(self):
+    def __init__(self, user):
         super().__init__()
+
+        self.user = user
 
         self.build_ui()
         self.load_data()
@@ -141,6 +143,12 @@ class MataKuliah(QWidget):
 
         if not success:
             return
+        
+        courses = [
+            course
+            for course in courses
+            if course.get("dosen") == self.user["nama"]
+        ]
 
         while self.card_layout.count():
 
@@ -250,7 +258,6 @@ class MataKuliah(QWidget):
             dialog.kode.text(),
             dialog.nama.text(),
             dialog.sks.value(),
-            dialog.dosen.text(),
             dialog.kode_join.text()
         )
 
@@ -268,7 +275,7 @@ class MataKuliah(QWidget):
             dialog.kode.text(),
             dialog.nama.text(),
             dialog.sks.value(),
-            dialog.dosen.text(),
+            self.user["nama"],
             dialog.deskripsi.toPlainText(),
             dialog.kode_join.text()
         )

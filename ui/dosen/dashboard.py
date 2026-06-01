@@ -12,10 +12,10 @@ from ui.dosen.mata_kuliah import (
 
 class DashboardDosen(QMainWindow):
 
-    def __init__(self, user_data=None):
+    def __init__(self, user=None):
         super().__init__()
 
-        self.user_data = user_data or {}
+        self.user= user or {}
         self.load_stylesheet()
         self.setWindowTitle("AkademiQ - Dashboard Dosen")
         self.resize(920, 620)          
@@ -37,7 +37,9 @@ class DashboardDosen(QMainWindow):
         self.stack = QStackedWidget()
 
         self.dashboard_page = QWidget()
-        self.matkul_page = MataKuliah()
+        self.matkul_page = MataKuliah(
+            self.user
+        )
         self.sidebar.btn_dashboard.clicked.connect(
             self.show_dashboard
         )
@@ -91,7 +93,7 @@ class DashboardDosen(QMainWindow):
         info_layout.setSpacing(0)
 
         nama = QLabel(
-            self.user_data.get(
+            self.user.get(
                 "nama",
                 "Dosen"
             )
@@ -99,7 +101,7 @@ class DashboardDosen(QMainWindow):
         nama.setObjectName("profileName")
 
         role = QLabel(
-            self.user_data.get(
+            self.user.get(
                 "role",
                 "Dosen"
             ).capitalize()
