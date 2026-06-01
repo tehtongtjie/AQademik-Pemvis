@@ -74,13 +74,13 @@ class Sidebar(QWidget):
 
         # MENU BUTTONS
         self.btn_dashboard = QPushButton("🏠 Dashboard")
-        self.btn_matKul = QPushButton("📝 Kelola Mata Kuliah")
+        self.btn_matkul = QPushButton("📝 Kelola Mata Kuliah")
         self.btn_jadwal = QPushButton("📅 Kelola Jadwal")
         self.btn_logout = QPushButton("🚪 Logout")
 
         for btn in [
             self.btn_dashboard,
-            self.btn_matKul,
+            self.btn_matkul,
             self.btn_jadwal,
         ]:
             btn.setObjectName("btnSecondary")

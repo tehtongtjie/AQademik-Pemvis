@@ -1,0 +1,117 @@
+/* =========================
+   DASHBOARD CARD
+   ========================= */
+
+QFrame#dashboardCard {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+}
+
+/* =========================
+   KPI
+   ========================= */
+
+QLabel#kpiIcon {
+    font-size: 18px;
+}
+
+QLabel#kpiTitle {
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+QLabel#kpiValue {
+    color: #0F172A;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* =========================
+   PROFILE
+   ========================= */
+
+QFrame#profileCard {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+}
+
+QLabel#profileName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0F172A;
+}
+
+QLabel#profileRole {
+    font-size: 12px;
+    color: #64748B;
+}
+
+QLabel#profileAvatar {
+    font-size: 24px;
+}
+
+/* =========================
+   TABLE
+   ========================= */
+
+QTableWidget {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    gridline-color: #E2E8F0;
+}
+
+QHeaderView::section {
+    background: #F8FAFC;
+    border: none;
+    padding: 10px;
+    font-weight: 600;
+}
+
+/* =========================
+   SEARCH
+   ========================= */
+
+QLineEdit {
+    min-height: 40px;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding-left: 12px;
+    background: white;
+}
+
+QLineEdit:focus {
+    border: 1px solid #6366F1;
+}
+
+/* =========================
+   COMBOBOX
+   ========================= */
+
+QComboBox {
+    min-height: 40px;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding-left: 10px;
+    background: white;
+}
+
+/* =========================
+   BUTTON
+   ========================= */
+
+QPushButton#btnPrimary {
+    background: #6366F1;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 600;
+}
+
+QPushButton#btnPrimary:hover {
+    background: #4F46E5;
+}
