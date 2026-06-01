@@ -1,5 +1,6 @@
 from supabase import create_client
 from dotenv import load_dotenv
+from PySide6.QtCore import QObject, Signal
 import os
 import bcrypt
 import re
@@ -116,25 +117,77 @@ def login_user(email: str, password: str):
 
 
 # ==========================================================================
+# ─── USERS / PROFILE ──────────────────────────────────────────────────────
+# ==========================================================================
+
+def update_user_profile(user_id: int, name: str, email: str, phone: str, address: str):
+    """Update profil user."""
+    try:
+        supabase.table("users").update({
+            "nama":    name,
+            "email":   email,
+            "phone":   phone,
+            "address": address
+        }).eq("id", user_id).execute()
+        return True, "Profil berhasil diupdate"
+    except Exception as e:
+        return False, str(e)
+
+def change_password(user_id: int, old_password: str, new_password: str):
+    """Ganti password user."""
+    try:
+        res = supabase.table("users").select("password").eq("id", user_id).execute()
+        if not res.data:
+            return False, "User tidak ditemukan"
+
+        if not verify_password(old_password, res.data[0]["password"]):
+            return False, "Password lama salah"
+
+        if len(new_password) < 6:
+            return False, "Password baru minimal 6 karakter."
+
+        supabase.table("users").update({
+            "password": hash_password(new_password)
+        }).eq("id", user_id).execute()
+
+        return True, "Password berhasil diganti"
+    except Exception as e:
+        return False, str(e)
+
+
+# ==========================================================================
 # ─── COURSES ──────────────────────────────────────────────────────────────
 # ==========================================================================
 
-def get_courses():
-    """Ambil semua mata kuliah."""
+def get_courses(dosen_id: int = None):
+    """Ambil semua mata kuliah. Filter by dosen_id jika diberikan."""
     try:
-        res = supabase.table("courses").select("*").order("nama").execute()
+        query = supabase.table("courses").select("*, users(nama)")
+        if dosen_id:
+            query = query.eq("dosen_id", dosen_id)
+        res = query.order("nama").execute()
         return True, res.data
     except Exception as e:
         return False, f"Gagal ambil courses: {e}"
 
-def add_course(kode: str, nama: str, sks: int, dosen: str, deskripsi: str, enroll_code: str):
+def get_course_by_id(course_id: int):
+    """Ambil detail mata kuliah berdasarkan ID."""
+    try:
+        res = supabase.table("courses").select("*, users(nama)").eq("id", course_id).execute()
+        if res.data:
+            return True, res.data[0]
+        return False, "Course tidak ditemukan"
+    except Exception as e:
+        return False, str(e)
+
+def add_course(kode: str, nama: str, sks: int, dosen_id: int, deskripsi: str, enroll_code: str):
     """Dosen tambah mata kuliah baru."""
     try:
         supabase.table("courses").insert({
             "kode":        kode.strip().upper(),
             "nama":        nama.strip(),
             "sks":         sks,
-            "dosen":       dosen.strip(),
+            "dosen_id":    dosen_id,
             "deskripsi":   deskripsi.strip(),
             "enroll_code": enroll_code.strip().upper()
         }).execute()
@@ -200,6 +253,29 @@ def get_enrolled_courses(user_id: int):
     except Exception as e:
         return False, f"Gagal ambil enrolled courses: {e}"
 
+def get_user_enrolled_courses(user_id: int):
+    """Ambil enrolled courses dalam format ringkas untuk dashboard/profile."""
+    try:
+        res = supabase.table("enrollments").select("*, courses(*)") \
+                      .eq("user_id", user_id) \
+                      .eq("status", "active").execute()
+
+        enrolled_courses = []
+        for item in res.data:
+            if item.get("courses"):
+                course = item["courses"]
+                enrolled_courses.append({
+                    "id":          course["id"],
+                    "nama":        course["nama"],
+                    "sks":         course["sks"],
+                    "dosen_id":    course.get("dosen_id"),
+                    "kode":        course["kode"],
+                    "enroll_code": course["enroll_code"]
+                })
+        return True, enrolled_courses
+    except Exception as e:
+        return False, str(e)
+
 def get_mahasiswa_list(course_id: int = None):
     """Dosen lihat daftar mahasiswa, bisa filter by course."""
     try:
@@ -225,12 +301,29 @@ def get_schedules():
     except Exception as e:
         return False, f"Gagal ambil jadwal: {e}"
 
-def add_schedule(day_of_week: str, course_name: str, lecturer: str,
+def get_user_schedule(user_id: int):
+    """Ambil jadwal untuk mata kuliah yang diambil mahasiswa."""
+    try:
+        success, enrolled = get_user_enrolled_courses(user_id)
+        if not success or not enrolled:
+            return True, []
+
+        course_names = [c["nama"] for c in enrolled]
+        if not course_names:
+            return True, []
+
+        res = supabase.table("schedules").select("*").in_("course_name", course_names).execute()
+        return True, res.data
+    except Exception as e:
+        return False, str(e)
+
+def add_schedule(day_of_week: str, course_id: int, course_name: str, lecturer: str,
                  start_time: str, end_time: str, room: str, color: str = "#3498db"):
     """Dosen tambah jadwal kuliah."""
     try:
         supabase.table("schedules").insert({
             "day_of_week": day_of_week,
+            "course_id":   course_id,
             "course_name": course_name,
             "lecturer":    lecturer,
             "start_time":  start_time,
@@ -274,6 +367,10 @@ def get_assignments(course_id: int = None):
     except Exception as e:
         return False, f"Gagal ambil tugas: {e}"
 
+def get_course_assignments(course_id: int):
+    """Ambil tugas untuk suatu mata kuliah (alias get_assignments)."""
+    return get_assignments(course_id)
+
 def add_assignment(course_id: int, judul: str, deskripsi: str,
                    deadline_date: str, deadline_time: str = "23:59:00"):
     """Dosen tambah tugas baru."""
@@ -314,7 +411,7 @@ def submit_tugas(assignment_id: int, user_id: int, file_path: str, catatan: str 
     """Mahasiswa upload PDF untuk mengumpulkan tugas."""
     try:
         file_name    = os.path.basename(file_path)
-        storage_path = f"{user_id}/{assignment_id}/{file_name}"
+        storage_path = f"submissions/{user_id}/{assignment_id}/{file_name}"
 
         with open(file_path, "rb") as f:
             supabase.storage.from_("tugas-files").upload(
@@ -353,6 +450,9 @@ def submit_tugas(assignment_id: int, user_id: int, file_path: str, catatan: str 
     except Exception as e:
         return False, f"Terjadi kesalahan: {e}"
 
+# Alias agar kompatibel dengan kode teman
+submit_assignment = submit_tugas
+
 def get_submissions(assignment_id: int = None, user_id: int = None):
     """Ambil submissions, bisa filter by assignment atau user."""
     try:
@@ -365,6 +465,18 @@ def get_submissions(assignment_id: int = None, user_id: int = None):
         return True, res.data
     except Exception as e:
         return False, f"Gagal ambil submissions: {e}"
+
+def get_user_submission(assignment_id: int, user_id: int):
+    """Ambil submission mahasiswa untuk suatu tugas."""
+    try:
+        res = supabase.table("submissions").select("*") \
+                      .eq("assignment_id", assignment_id) \
+                      .eq("user_id", user_id).execute()
+        if res.data:
+            return True, res.data[0]
+        return False, "Belum ada submission"
+    except Exception as e:
+        return False, str(e)
 
 def beri_nilai(submission_id: int, nilai: str):
     """Dosen beri nilai pada submission mahasiswa."""
@@ -421,6 +533,10 @@ def get_materi(course_id: int = None):
     except Exception as e:
         return False, f"Gagal ambil materi: {e}"
 
+def get_course_materials(course_id: int):
+    """Ambil materi untuk suatu mata kuliah (alias get_materi)."""
+    return get_materi(course_id)
+
 def hapus_materi(materi_id: int):
     """Hapus materi beserta filenya."""
     try:
@@ -437,6 +553,14 @@ def hapus_materi(materi_id: int):
     except Exception as e:
         return False, f"Gagal hapus materi: {e}"
 
+def download_material(file_path: str):
+    """Download file materi dari storage."""
+    try:
+        data = supabase.storage.from_("tugas-files").download(file_path)
+        return True, data
+    except Exception as e:
+        return False, str(e)
+
 
 # ==========================================================================
 # ─── PERSONAL TASKS ───────────────────────────────────────────────────────
@@ -448,9 +572,21 @@ def get_personal_tasks(user_id: int):
         res = supabase.table("personal_tasks").select("*") \
                       .eq("user_id", user_id) \
                       .order("deadline_date").execute()
-        return True, res.data
+
+        tasks = []
+        for task in res.data:
+            tasks.append({
+                "id":            task["id"],
+                "judul":         task["judul"],
+                "course_name":   task["course_name"],
+                "deskripsi":     task.get("deskripsi", ""),
+                "deadline_date": task["deadline_date"],
+                "priority":      task["priority"],
+                "status":        task["status"]
+            })
+        return True, tasks
     except Exception as e:
-        return False, f"Gagal ambil personal tasks: {e}"
+        return False, str(e)
 
 def add_personal_task(user_id: int, judul: str, course_name: str,
                       deskripsi: str, deadline_date: str, priority: str = "Medium"):
@@ -469,271 +605,27 @@ def add_personal_task(user_id: int, judul: str, course_name: str,
         }).execute()
         return True, "Tugas berhasil ditambahkan!"
     except Exception as e:
-        return False, f"Gagal tambah tugas: {e}"
+        return False, str(e)
 
 def update_personal_task(task_id: int, user_id: int, data: dict):
     """Update tugas pribadi (hanya milik sendiri)."""
-    allowed_status = ("Pending", "Not Started", "Doing", "Done")
+    allowed_status   = ("Pending", "Not Started", "Doing", "Done")
+    allowed_priority = ("Low", "Medium", "High")
+
     if "status" in data and data["status"] not in allowed_status:
         return False, "Status tidak valid."
+    if "priority" in data and data["priority"] not in allowed_priority:
+        return False, "Priority tidak valid."
+
     try:
         supabase.table("personal_tasks").update(data) \
                 .eq("id", task_id).eq("user_id", user_id).execute()
         return True, "Tugas berhasil diupdate!"
     except Exception as e:
-        return False, f"Gagal update tugas: {e}"
+        return False, str(e)
 
 def hapus_personal_task(task_id: int, user_id: int):
     """Hapus tugas pribadi (hanya milik sendiri)."""
-    try:
-        supabase.table("personal_tasks").delete() \
-                .eq("id", task_id).eq("user_id", user_id).execute()
-        return True, "Tugas berhasil dihapus!"
-    except Exception as e:
-        return False, f"Gagal hapus tugas: {e}"
-    
-# ==========================================================================
-# ─── ENROLLMENTS (lanjutan) ───────────────────────────────────────────────
-# ==========================================================================
-
-def get_user_enrolled_courses(user_id: int):
-    """Ambil semua mata kuliah yang diikuti mahasiswa (format untuk dashboard/profile)"""
-    try:
-        res = supabase.table("enrollments").select("*, courses(*)") \
-                      .eq("user_id", user_id) \
-                      .eq("status", "active").execute()
-        
-        # Format ulang agar lebih mudah digunakan
-        enrolled_courses = []
-        for item in res.data:
-            if item.get('courses'):
-                course = item['courses']
-                enrolled_courses.append({
-                    'id': course['id'],
-                    'nama': course['nama'],
-                    'sks': course['sks'],
-                    'dosen': course['dosen'],
-                    'kode': course['kode'],
-                    'enroll_code': course['enroll_code']
-                })
-        return True, enrolled_courses
-    except Exception as e:
-        return False, str(e)
-
-def get_course_by_id(course_id: int):
-    """Ambil detail mata kuliah berdasarkan ID"""
-    try:
-        res = supabase.table("courses").select("*").eq("id", course_id).execute()
-        if res.data:
-            return True, res.data[0]
-        return False, "Course not found"
-    except Exception as e:
-        return False, str(e)
-
-
-def get_user_schedule(user_id: int):
-    """Ambil jadwal untuk mata kuliah yang diambil mahasiswa"""
-    try:
-        # Dapatkan daftar mata kuliah yang diambil
-        success, enrolled = get_user_enrolled_courses(user_id)
-        if not success or not enrolled:
-            return True, []
-        
-        course_names = [c['nama'] for c in enrolled]
-        
-        # Ambil jadwal untuk mata kuliah tersebut
-        if course_names:
-            # Supabase tidak support IN dengan list kosong
-            placeholders = ','.join([f"'{name}'" for name in course_names])
-            res = supabase.table("schedules").select("*").in_("course_name", course_names).execute()
-            return True, res.data
-        return True, []
-    except Exception as e:
-        return False, str(e)
-
-def update_user_profile(user_id: int, name: str, email: str, phone: str, address: str):
-    """Update profil mahasiswa"""
-    try:
-        supabase.table("users").update({
-            "nama": name,
-            "email": email,
-            "phone": phone,
-            "address": address
-        }).eq("id", user_id).execute()
-        return True, "Profil berhasil diupdate"
-    except Exception as e:
-        return False, str(e)
-
-
-def change_password(user_id: int, old_password: str, new_password: str):
-    """Ganti password mahasiswa"""
-    try:
-        # Cek user dulu
-        res = supabase.table("users").select("password").eq("id", user_id).execute()
-        if not res.data:
-            return False, "User tidak ditemukan"
-        
-        # Verifikasi password lama
-        if not verify_password(old_password, res.data[0]['password']):
-            return False, "Password lama salah"
-        
-        # Update password baru
-        supabase.table("users").update({
-            "password": hash_password(new_password)
-        }).eq("id", user_id).execute()
-        
-        return True, "Password berhasil diganti"
-    except Exception as e:
-        return False, str(e)
-
-
-def get_course_materials(course_id: int):
-    """Ambil materi untuk suatu mata kuliah"""
-    try:
-        res = supabase.table("materials").select("*").eq("course_id", course_id).order("created_at").execute()
-        return True, res.data
-    except Exception as e:
-        return False, str(e)
-
-
-def get_course_assignments(course_id: int):
-    """Ambil tugas untuk suatu mata kuliah"""
-    try:
-        res = supabase.table("assignments").select("*").eq("course_id", course_id).order("deadline_date").execute()
-        return True, res.data
-    except Exception as e:
-        return False, str(e)
-
-
-def submit_assignment(assignment_id: int, user_id: int, file_path: str, catatan: str = ""):
-    """Submit tugas mahasiswa"""
-    import os
-    try:
-        file_name = os.path.basename(file_path)
-        storage_path = f"submissions/{user_id}/{assignment_id}/{file_name}"
-        
-        with open(file_path, "rb") as f:
-            supabase.storage.from_("tugas-files").upload(
-                path=storage_path,
-                file=f,
-                file_options={"content-type": "application/pdf"}
-            )
-        
-        file_url = supabase.storage.from_("tugas-files").get_public_url(storage_path)
-        
-        # Cek apakah sudah pernah submit
-        check = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
-        
-        if check.data:
-            supabase.table("submissions").update({
-                "file_path": storage_path,
-                "file_url": file_url,
-                "file_name": file_name,
-                "catatan": catatan,
-                "status": "submitted"
-            }).eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
-        else:
-            supabase.table("submissions").insert({
-                "assignment_id": assignment_id,
-                "user_id": user_id,
-                "file_path": storage_path,
-                "file_url": file_url,
-                "file_name": file_name,
-                "catatan": catatan,
-                "status": "submitted"
-            }).execute()
-        
-        return True, "Tugas berhasil dikumpulkan"
-    except Exception as e:
-        return False, str(e)
-
-
-def get_user_submission(assignment_id: int, user_id: int):
-    """Ambil submission mahasiswa untuk suatu tugas"""
-    try:
-        res = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
-        if res.data:
-            return True, res.data[0]
-        return False, "No submission found"
-    except Exception as e:
-        return False, str(e)
-
-
-def download_material(file_path: str):
-    """Download file materi"""
-    try:
-        data = supabase.storage.from_("tugas-files").download(file_path)
-        return True, data
-    except Exception as e:
-        return False, str(e)
-
-
-# ==========================================================================
-# ─── PERSONAL TASKS (lanjutan) ────────────────────────────────────────────
-# ==========================================================================
-
-def get_personal_tasks(user_id: int):
-    """Ambil semua tugas pribadi milik user (format untuk dashboard/tugas page)"""
-    try:
-        res = supabase.table("personal_tasks").select("*") \
-                      .eq("user_id", user_id) \
-                      .order("deadline_date").execute()
-        
-        tasks = []
-        for task in res.data:
-            tasks.append({
-                'id': task['id'],
-                'judul': task['judul'],
-                'course_name': task['course_name'],
-                'deskripsi': task.get('deskripsi', ''),
-                'deadline_date': task['deadline_date'],
-                'priority': task['priority'],
-                'status': task['status']
-            })
-        return True, tasks
-    except Exception as e:
-        return False, str(e)
-
-
-def add_personal_task(user_id: int, judul: str, course_name: str, deskripsi: str, deadline_date: str, priority: str):
-    """Tambah tugas pribadi"""
-    if priority not in ("Low", "Medium", "High"):
-        return False, "Priority tidak valid."
-    try:
-        supabase.table("personal_tasks").insert({
-            "user_id": user_id,
-            "judul": judul.strip(),
-            "course_name": course_name.strip(),
-            "deskripsi": deskripsi.strip(),
-            "deadline_date": deadline_date,
-            "priority": priority,
-            "status": "Pending"
-        }).execute()
-        return True, "Tugas berhasil ditambahkan!"
-    except Exception as e:
-        return False, str(e)
-
-
-def update_personal_task(task_id: int, user_id: int, data: dict):
-    """Update tugas pribadi (hanya milik sendiri)"""
-    allowed_status = ("Pending", "Not Started", "Doing", "Done")
-    allowed_priority = ("Low", "Medium", "High")
-    
-    if "status" in data and data["status"] not in allowed_status:
-        return False, "Status tidak valid"
-    if "priority" in data and data["priority"] not in allowed_priority:
-        return False, "Priority tidak valid"
-    
-    try:
-        supabase.table("personal_tasks").update(data) \
-                .eq("id", task_id).eq("user_id", user_id).execute()
-        return True, "Tugas berhasil diupdate!"
-    except Exception as e:
-        return False, str(e)
-
-
-def hapus_personal_task(task_id: int, user_id: int):
-    """Hapus tugas pribadi (hanya milik sendiri)"""
     try:
         supabase.table("personal_tasks").delete() \
                 .eq("id", task_id).eq("user_id", user_id).execute()
@@ -746,11 +638,7 @@ def hapus_personal_task(task_id: int, user_id: int):
 # ─── SIGNALS ──────────────────────────────────────────────────────────────
 # ==========================================================================
 
-from PySide6.QtCore import QObject, Signal
-
-
 class DatabaseSignals(QObject):
     data_changed = Signal()
-
 
 db_signals = DatabaseSignals()
