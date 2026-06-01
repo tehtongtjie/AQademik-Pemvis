@@ -1,9 +1,14 @@
+import os
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame
+    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame, QStackedWidget
 )
 
 from PySide6.QtCore import Qt
 from ui.components.sidebar import Sidebar
+from ui.dosen.mata_kuliah import (
+    MataKuliah,
+    DetailMataKuliah
+)
 
 class DashboardDosen(QMainWindow):
 
@@ -11,7 +16,7 @@ class DashboardDosen(QMainWindow):
         super().__init__()
 
         self.user_data = user_data or {}
-
+        self.load_stylesheet()
         self.setWindowTitle("AkademiQ - Dashboard Dosen")
         self.resize(920, 620)          
         self.setMinimumSize(920, 620)
@@ -29,12 +34,25 @@ class DashboardDosen(QMainWindow):
 
         # SIDEBAR
         self.sidebar = Sidebar()
+        self.stack = QStackedWidget()
+
+        self.dashboard_page = QWidget()
+        self.matkul_page = MataKuliah()
+        self.sidebar.btn_dashboard.clicked.connect(
+            self.show_dashboard
+        )
+        self.sidebar.btn_matkul.clicked.connect(
+            self.show_matkul
+        )
+        # self.sidebar.btn_jadwal.clicked.connect(
+        #     self.show_jadwal
+        # )
         self.sidebar.btn_logout.clicked.connect(
             self.logout
         )
 
         # CONTENT
-        content = QWidget()
+        content =  self.dashboard_page
         content.setObjectName("rightPanel")
 
         content_layout = QVBoxLayout(content)
@@ -104,6 +122,7 @@ class DashboardDosen(QMainWindow):
         content_layout.addWidget(header)
 
         # KPI CARDS
+        stats = self.get_dashboard_stats()
         cards_layout = QHBoxLayout()
         cards_layout.setSpacing(15)
 
@@ -111,7 +130,7 @@ class DashboardDosen(QMainWindow):
             self.create_kpi_card(
                 "📚",
                 "Mata Kuliah",
-                5
+                stats["courses"]
             )
         )
 
@@ -119,7 +138,7 @@ class DashboardDosen(QMainWindow):
             self.create_kpi_card(
                 "📝",
                 "Total Tugas",
-                18
+                stats["assignments"]
             )
         )
 
@@ -127,7 +146,7 @@ class DashboardDosen(QMainWindow):
             self.create_kpi_card(
                 "👨‍🎓",
                 "Mahasiswa",
-                120
+                stats["students"]
             )
         )
 
@@ -135,7 +154,7 @@ class DashboardDosen(QMainWindow):
             self.create_kpi_card(
                 "📅",
                 "Jadwal Hari Ini",
-                3
+                stats["schedules"]
             )
         )
 
@@ -196,6 +215,17 @@ class DashboardDosen(QMainWindow):
             aktivitas_card
         )
 
+        self.stack.addWidget(
+            self.dashboard_page
+        )
+
+        self.stack.addWidget(
+            self.matkul_page
+        )
+        self.stack.setCurrentWidget(
+            self.dashboard_page
+        )
+
         # =====================================
         # ROOT
         # =====================================
@@ -205,8 +235,34 @@ class DashboardDosen(QMainWindow):
         )
 
         root_layout.addWidget(
-            content
+            self.stack
         )
+    
+    def load_stylesheet(self):
+
+        qss_path = os.path.join(
+            os.path.dirname(__file__),
+            "style.qss"
+        )
+
+        try:
+
+            with open(
+                qss_path,
+                "r",
+                encoding="utf-8"
+            ) as file:
+
+                self.setStyleSheet(
+                    file.read()
+                )
+
+        except Exception as e:
+
+            print(
+                "Gagal load QSS:",
+                e
+            )
 
     def create_kpi_card(
         self,
@@ -216,37 +272,104 @@ class DashboardDosen(QMainWindow):
     ):
 
         card = QFrame()
-        card.setObjectName(
-            "dashboardCard"
-        )
+        card.setObjectName("dashboardCard")
+        card.setFixedHeight(75)
 
-        card.setMinimumHeight(130)
-
-        layout = QVBoxLayout(card)
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(12, 8, 12, 8)
 
         icon_label = QLabel(icon)
-        icon_label.setObjectName(
-            "kpiIcon"
-        )
+        icon_label.setObjectName("kpiIcon")
+
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(0)
+
+        value_label = QLabel(str(value))
+        value_label.setObjectName("kpiValue")
 
         title_label = QLabel(title)
-        title_label.setObjectName(
-            "kpiTitle"
-        )
+        title_label.setObjectName("kpiTitle")
 
-        value_label = QLabel(
-            str(value)
-        )
-        value_label.setObjectName(
-            "kpiValue"
-        )
+        info_layout.addWidget(value_label)
+        info_layout.addWidget(title_label)
 
         layout.addWidget(icon_label)
-        layout.addWidget(title_label)
-        layout.addStretch()
-        layout.addWidget(value_label)
+        layout.addLayout(info_layout)
 
         return card
+    
+    def get_dashboard_stats(self):
+
+        try:
+
+            courses = get_courses()
+            assignments = get_assignments()
+            schedules = get_schedules()
+
+            total_mahasiswa = 0
+
+            for course in courses:
+
+                enrollments = get_course_enrollments(
+                    course["id"]
+                )
+
+                total_mahasiswa += len(
+                    enrollments
+                )
+
+            return {
+                "courses": len(courses),
+                "assignments": len(assignments),
+                "students": total_mahasiswa,
+                "schedules": len(schedules)
+            }
+
+        except Exception as e:
+
+            print(e)
+
+            return {
+                "courses": 0,
+                "assignments": 0,
+                "students": 0,
+                "schedules": 0
+            }
+    def show_matkul(self):
+
+        self.stack.setCurrentWidget(
+            self.matkul_page
+        )
+
+    def buka_detail_matkul(
+        self,
+        course
+    ):
+
+        self.detail_page = DetailMataKuliah(
+            course
+        )
+
+        self.stack.addWidget(
+            self.detail_page
+        )
+
+        self.stack.setCurrentWidget(
+            self.detail_page
+        )
+
+        self.detail_page.btn_kembali.clicked.connect(
+            lambda:
+            self.stack.setCurrentWidget(
+                self.matkul_page
+            )
+        )
+        
+    def show_dashboard(self):
+
+        self.stack.setCurrentWidget(
+            self.dashboard_page
+        )
 
     def logout(self):
 
