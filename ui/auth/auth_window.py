@@ -390,6 +390,7 @@ class AuthWindow(QMainWindow):
         root_layout.addWidget(right)
 
     def _on_login_success(self, user: dict):
+        print(user)
         if user["role"] == "dosen":
             self.dashboard = DashboardDosen(user)
             self.dashboard.show()
