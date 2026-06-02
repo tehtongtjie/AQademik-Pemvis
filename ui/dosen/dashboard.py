@@ -5,8 +5,14 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtCore import Qt
 from ui.components.sidebar import Sidebar
-from ui.dosen.mata_kuliah import (
-    MataKuliah,
+from ui.dosen.mata_kuliah import MataKuliah
+from database.db_manager import (
+    get_courses,
+    get_assignments,
+    get_schedules,
+    get_mahasiswa_list
+)
+from ui.dosen.detail_mata_kuliah import (
     DetailMataKuliah
 )
 
@@ -304,21 +310,26 @@ class DashboardDosen(QMainWindow):
 
         try:
 
-            courses = get_courses()
-            assignments = get_assignments()
-            schedules = get_schedules()
+            success, courses = get_courses(
+                self.user["id"]
+            )
+
+            success, assignments = get_assignments()
+
+            success, schedules = get_schedules()
 
             total_mahasiswa = 0
 
             for course in courses:
 
-                enrollments = get_course_enrollments(
+                success, mahasiswa = get_mahasiswa_list(
                     course["id"]
                 )
 
-                total_mahasiswa += len(
-                    enrollments
-                )
+                if success:
+                    total_mahasiswa += len(
+                        mahasiswa
+                    )
 
             return {
                 "courses": len(courses),

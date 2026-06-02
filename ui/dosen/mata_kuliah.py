@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
 QWidget,
 QVBoxLayout,
 QHBoxLayout,
+QGridLayout,
 QLabel,
 QPushButton,
 QLineEdit,
@@ -121,12 +122,12 @@ class MataKuliah(QWidget):
 
         self.container = QWidget()
 
-        self.card_layout = QVBoxLayout(
+        self.card_layout = QGridLayout(
             self.container
         )
 
         self.card_layout.setSpacing(
-            15
+            20
         )
 
         self.scroll.setWidget(
@@ -139,16 +140,12 @@ class MataKuliah(QWidget):
 
     def load_data(self):
 
-        success, courses = get_courses()
+        success, courses = get_courses(
+            self.user["id"]
+        )
 
         if not success:
             return
-        
-        courses = [
-            course
-            for course in courses
-            if course.get("dosen") == self.user["nama"]
-        ]
 
         while self.card_layout.count():
 
@@ -157,17 +154,40 @@ class MataKuliah(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        for course in courses:
+        width = self.scroll.viewport().width()
+
+        if width < 700:
+            columns = 1
+        elif width < 1100:
+            columns = 2
+        else:
+            columns = 3
+
+        for index, course in enumerate(courses):
+
+            row = index // columns
+            col = index % columns
 
             card = self.create_course_card(
                 course
             )
 
             self.card_layout.addWidget(
-                card
+                card,
+                row,
+                col
             )
 
-        self.card_layout.addStretch()
+        for i in range(columns):
+            self.card_layout.setColumnStretch(i, 1)
+
+        last_row = (len(courses) // columns) + 1
+
+        self.card_layout.setRowStretch(
+            last_row,
+            1
+        )
+
 
     def create_course_card(
         self,
@@ -179,6 +199,7 @@ class MataKuliah(QWidget):
         card.setObjectName(
             "dashboardCard"
         )
+        card.setMinimumHeight(100)
 
         layout = QVBoxLayout(
             card
@@ -187,6 +208,14 @@ class MataKuliah(QWidget):
         nama = QLabel(
             course["nama"]
         )
+        deskripsi = QLabel(
+            course.get(
+                "deskripsi",
+                "-"
+            )
+        )
+
+        deskripsi.setWordWrap(True)
 
         nama.setObjectName(
             "labelTitle"
@@ -211,6 +240,7 @@ class MataKuliah(QWidget):
             lambda _, c=course:
             self.buka_mata_kuliah(c)
         )
+        btn_buka.setMinimumHeight(38)
 
         tombol_layout.addStretch()
         tombol_layout.addWidget(
@@ -224,6 +254,8 @@ class MataKuliah(QWidget):
         layout.addWidget(
             info
         )
+        layout.addWidget(deskripsi)
+        layout.addStretch()
 
         layout.addLayout(
             tombol_layout
@@ -275,7 +307,7 @@ class MataKuliah(QWidget):
             dialog.kode.text(),
             dialog.nama.text(),
             dialog.sks.value(),
-            self.user["nama"],
+            self.user["id"],
             dialog.deskripsi.toPlainText(),
             dialog.kode_join.text()
         )
@@ -297,3 +329,9 @@ class MataKuliah(QWidget):
                 "Gagal",
                 pesan
             )
+    
+    def resizeEvent(self, event):
+
+        super().resizeEvent(event)
+
+        self.load_data()

@@ -115,3 +115,27 @@ QPushButton#btnPrimary {
 QPushButton#btnPrimary:hover {
     background: #4F46E5;
 }
+
+
+QTextEdit {
+    background-color: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 14px;
+}
+
+QTextEdit:focus {
+    border: 1.5px solid #38BDF8;
+}
+
+QSpinBox {
+    background-color: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+QSpinBox:focus {
+    border: 1.5px solid #38BDF8;
+}
