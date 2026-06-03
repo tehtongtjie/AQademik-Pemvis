@@ -553,6 +553,14 @@ def hapus_materi(materi_id: int):
     except Exception as e:
         return False, f"Gagal hapus materi: {e}"
 
+def update_materi(materi_id: int, data: dict):
+    """Update data materi (judul, deskripsi, dll)."""
+    try:
+        supabase.table("materials").update(data).eq("id", materi_id).execute()
+        return True, "Materi berhasil diupdate!"
+    except Exception as e:
+        return False, f"Gagal update materi: {e}"
+
 def download_material(file_path: str):
     """Download file materi dari storage."""
     try:
@@ -560,7 +568,6 @@ def download_material(file_path: str):
         return True, data
     except Exception as e:
         return False, str(e)
-
 
 # ==========================================================================
 # ─── PERSONAL TASKS ───────────────────────────────────────────────────────
