@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
+from ui.dosen.dashboard import DashboardDosen
 
 # ==========================================================================
 # ─── DATABASE INTEGRATION & FALLBACK MOCK ─────────────────────────────────
@@ -389,4 +390,7 @@ class AuthWindow(QMainWindow):
         root_layout.addWidget(right)
 
     def _on_login_success(self, user: dict):
-        pass
+        if user["role"] == "dosen":
+            self.dashboard = DashboardDosen(user)
+            self.dashboard.show()
+            self.close()
