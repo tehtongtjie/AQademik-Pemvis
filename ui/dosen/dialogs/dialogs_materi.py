@@ -191,9 +191,9 @@ class DialogMateri(QDialog):
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Pilih PDF",
+            "Pilih Materi",
             "",
-            "PDF (*.pdf)"
+            "Dokumen (*.pdf *.ppt *.pptx *.doc *.docx)"
         )
 
         if file_path:
@@ -205,5 +205,5 @@ class DialogMateri(QDialog):
             )
 
             self.btn_file.setText(
-                "Ganti PDF"
+                "Ganti Materi"
             )
