@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from ui.mahasiswa.widgets import StatCircleCard, TugasCard, CourseCard
-from database.db_manager import get_personal_tasks, get_enrolled_courses, get_courses, get_course_by_id
+from database.db_manager import get_all_user_tasks, get_enrolled_courses, get_courses, get_course_by_id
 
 
 class DashboardPage(QWidget):
@@ -161,7 +161,8 @@ class DashboardPage(QWidget):
         if not self.user_id:
             return
         
-        success, tasks = get_personal_tasks(self.user_id)
+        # Ambil semua tugas (personal + dari dosen)
+        success, tasks = get_all_user_tasks(self.user_id)
         if success:
             self.tasks_data = tasks
         else:
@@ -171,6 +172,7 @@ class DashboardPage(QWidget):
         done = len([t for t in self.tasks_data if t.get('status') == 'Done'])
         self.stat_circle.update_stats(done, total)
         
+        # Tugas aktif (belum selesai)
         active_tasks = [t for t in self.tasks_data if t.get('status') != 'Done']
         active_tasks.sort(key=lambda x: x.get('deadline_date', '9999-12-31'))
         

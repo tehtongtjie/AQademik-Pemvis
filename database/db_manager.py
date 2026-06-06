@@ -720,7 +720,66 @@ def hapus_personal_task(task_id: int, user_id: int):
     except Exception as e:
         return False, str(e)
 
+def get_all_user_tasks(user_id: int):
+    # 1. Get personal tasks
+    success, personal_tasks = get_personal_tasks(user_id)
+    if not success:
+        personal_tasks = []
+    
+    # 2. Get enrolled courses with course details
+    success, enrolled = get_enrolled_courses_with_details(user_id)
+    enrolled_courses = []
+    if success and enrolled:
+        enrolled_courses = enrolled
+    
+    # 3. Get assignments from enrolled courses
+    course_tasks = []
+    for course in enrolled_courses:
+        course_id = course.get('id')
+        course_name = course.get('nama', 'Mata Kuliah')
+        
+        # Get assignments for this course
+        success, assignments = get_assignments(course_id)
+        if success and assignments:
+            for task in assignments:
+                # Check if user has submitted this assignment
+                success, submission = get_user_submission(task['id'], user_id)
+                is_submitted = success and submission
+                
+                # Get nilai if exists
+                nilai = submission.get('nilai', '-') if submission else '-'
+                
+                course_tasks.append({
+                    'id': task['id'],
+                    'judul': task.get('judul', ''),
+                    'course_name': course_name,
+                    'deskripsi': task.get('deskripsi', ''),
+                    'deadline_date': task.get('deadline_date', ''),
+                    'priority': 'Medium',
+                    'status': 'Done' if is_submitted else 'Not Started',
+                    'source': 'dosen',
+                    'submission': submission if is_submitted else None,
+                    'nilai': nilai
+                })
+    
+    # 4. Combine and sort by deadline
+    all_tasks = personal_tasks + course_tasks
+    all_tasks.sort(key=lambda x: x.get('deadline_date', '9999-12-31'))
+    
+    return True, all_tasks
 
+
+def get_enrolled_courses_with_details(user_id: int):
+    try:
+        res = supabase.table("enrollments").select("courses(*)").eq("user_id", user_id).eq("status", "active").execute()
+        courses = []
+        for item in res.data:
+            if item.get('courses'):
+                courses.append(item['courses'])
+        return True, courses
+    except Exception as e:
+        return False, str(e)
+    
 # ==========================================================================
 # ─── SIGNALS ──────────────────────────────────────────────────────────────
 # ==========================================================================

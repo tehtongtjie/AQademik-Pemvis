@@ -7,6 +7,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
+from ui.dosen.dashboard import DashboardDosen
+from ui.mahasiswa.main_window import MahasiswaMainWindow
+            
 
 # ==========================================================================
 # ─── DATABASE INTEGRATION & FALLBACK MOCK ─────────────────────────────────
@@ -174,6 +177,7 @@ class LoginPage(QWidget):
         self.lbl_status.hide()
         ok, result = login_user(self.f_email.value(), self.f_password.value())
         if ok:
+            # Tampilkan pop-up informasi sukses login sebelum dialihkan ke main app
             role_label = "Dosen" if result["role"] == "dosen" else "Mahasiswa"
             QMessageBox.information(
                 self, "Login Berhasil",
@@ -181,9 +185,7 @@ class LoginPage(QWidget):
             )
             self.f_email.clear()
             self.f_password.clear()
-            # Panggil callback yang sudah diset
-            if self.on_login_success:
-                self.on_login_success(result)
+            self.on_login_success(result)
         else:
             self.lbl_status.setText(f"⚠ {result}")
             self.lbl_status.show()
@@ -296,8 +298,7 @@ class AuthWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("AkademiQ — Autentikasi")
         self.resize(920, 620)          
-        self.setMinimumSize(920, 620)
-        self.on_login_success = None  # Initialize callback
+        self.setMinimumSize(920, 620)  
         self._build_ui()
 
     def _build_ui(self):
@@ -391,9 +392,11 @@ class AuthWindow(QMainWindow):
         root_layout.addWidget(right)
 
     def _on_login_success(self, user: dict):
-        """Callback dari LoginPage - memanggil callback eksternal"""
-        print(f"[AUTH] Login sukses untuk {user.get('nama')}")
-        if self.on_login_success:
-            self.on_login_success(user)
-        else:
-            print("[AUTH] Tidak ada callback yang diset!")
+        if user["role"] == "dosen":
+            self.dashboard = DashboardDosen(user)
+            self.dashboard.show()
+            self.close()
+        if user["role"] == "mahasiswa":
+            self.dashboard = MahasiswaMainWindow(user)
+            self.dashboard.show()
+            self.close()

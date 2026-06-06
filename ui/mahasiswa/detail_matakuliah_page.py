@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QMenu
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QColor
+from PySide6.QtGui import QAction
 from database.db_manager import (
     get_course_materials, get_course_assignments, submit_assignment,
     download_material, get_user_submission, update_submission, delete_submission,
@@ -48,7 +48,6 @@ class DetailMatakuliahPage(QWidget):
         content_layout = QVBoxLayout(content_widget)
         content_layout.setSpacing(25)
         
-        # INFO CARD
         info_card = QFrame()
         info_card.setObjectName("infoCard")
         info_layout = QVBoxLayout(info_card)
@@ -84,7 +83,6 @@ class DetailMatakuliahPage(QWidget):
         
         content_layout.addWidget(info_card)
         
-        # ENROLLED CONTAINER
         self.enrolled_container = QFrame()
         self.enrolled_container.setObjectName("enrolledContainer")
         enrolled_layout = QVBoxLayout(self.enrolled_container)
@@ -265,17 +263,13 @@ class DetailMatakuliahPage(QWidget):
         return card
     
     def _check_is_late(self, deadline_date, submission_date):
-        """Cek apakah pengumpulan terlambat"""
         try:
-            # Parse deadline (format: YYYY-MM-DD HH:MM:SS atau YYYY-MM-DD)
             if ' ' in deadline_date:
                 deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
             else:
                 deadline = datetime.strptime(deadline_date, '%Y-%m-%d')
-                # Set deadline to end of day if only date provided
                 deadline = deadline.replace(hour=23, minute=59, second=59)
             
-            # Parse submission date
             if isinstance(submission_date, str):
                 if 'T' in submission_date:
                     submission_date = submission_date.replace('T', ' ')
@@ -293,7 +287,6 @@ class DetailMatakuliahPage(QWidget):
             return False, None, None
     
     def _format_datetime(self, dt_str):
-        """Format datetime string menjadi format yang lebih readable"""
         try:
             if isinstance(dt_str, str):
                 if 'T' in dt_str:
@@ -321,7 +314,6 @@ class DetailMatakuliahPage(QWidget):
         self.assignments = assignments
         self._clear_layout(self.tugas_list)
         
-        # Load submissions for all assignments
         for tugas in assignments:
             if isinstance(tugas, dict):
                 tugas_id = tugas.get('id')
@@ -348,12 +340,10 @@ class DetailMatakuliahPage(QWidget):
         header_layout.addWidget(judul)
         header_layout.addStretch()
         
-        # Deadline dengan warna
         deadline_date = tugas.get('deadline_date', '-')
         deadline_label = QLabel(f"📅 Deadline: {deadline_date}")
         deadline_label.setObjectName("tugasDeadline")
         
-        # Cek apakah deadline sudah lewat
         try:
             today = datetime.now().date()
             deadline_dt = datetime.strptime(deadline_date, '%Y-%m-%d').date()
@@ -374,58 +364,45 @@ class DetailMatakuliahPage(QWidget):
         submission = self.submissions.get(tugas_id)
         
         if submission:
-            # Already submitted
             status_layout = QVBoxLayout()
-            status_layout.setSpacing(5)
+            status_layout.setSpacing(8)
             
-            # Status utama
             submitted_at = submission.get('submitted_at', '-')
             submitted_date = self._format_datetime(submitted_at)
             
-            # Cek apakah terlambat
             is_late, deadline_dt, submitted_dt = self._check_is_late(deadline_date, submitted_at)
             
             if is_late:
-                status_text = f"⚠️ TERLAMBAT! Dikumpulkan pada: {submitted_date}"
-                status_label = QLabel(status_text)
-                status_label.setObjectName("submittedStatus")
-                status_label.setStyleSheet("color: #EF4444; font-weight: bold; background-color: #FEE2E2; padding: 6px; border-radius: 6px;")
+                status_label = QLabel(f"⚠️ TERLAMBAT! Dikumpulkan pada: {submitted_date}")
+                status_label.setObjectName("statusLate")
             else:
-                status_text = f"✅ Sudah dikumpulkan pada: {submitted_date}"
-                status_label = QLabel(status_text)
-                status_label.setObjectName("submittedStatus")
-                status_label.setStyleSheet("color: #10B981; background-color: #D1FAE5; padding: 6px; border-radius: 6px;")
+                status_label = QLabel(f"✅ Sudah dikumpulkan pada: {submitted_date}")
+                status_label.setObjectName("statusDone")
             
             status_layout.addWidget(status_label)
             
-            # Tambahan info file
+            nilai = submission.get('nilai', '-')
+            if nilai and nilai != '-':
+                nilai_label = QLabel(f"⭐ NILAI: {nilai}")
+                nilai_label.setObjectName("nilaiValue")
+                status_layout.addWidget(nilai_label)
+            else:
+                belum_nilai_label = QLabel("⏳ Belum dinilai")
+                belum_nilai_label.setObjectName("nilaiPending")
+                status_layout.addWidget(belum_nilai_label)
+            
             file_name = submission.get('file_name', '-')
             file_label = QLabel(f"📎 File: {file_name}")
             file_label.setObjectName("fileInfo")
-            file_label.setStyleSheet("color: #64748B; font-size: 11px;")
             status_layout.addWidget(file_label)
             
-            # Action buttons row
             action_layout = QHBoxLayout()
             action_layout.addStretch()
             
-            # Menu button for edit/delete
             menu_btn = QPushButton("⋮")
             menu_btn.setFixedSize(30, 30)
             menu_btn.setCursor(Qt.PointingHandCursor)
-            menu_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    color: #64748B;
-                    border: none;
-                    font-size: 16px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #E2E8F0;
-                    border-radius: 6px;
-                }
-            """)
+            menu_btn.setObjectName("menuBtn")
             
             menu = QMenu(menu_btn)
             edit_action = QAction("📝 Kumpul Ulang / Edit", self)
@@ -442,18 +419,15 @@ class DetailMatakuliahPage(QWidget):
             status_layout.addLayout(action_layout)
             layout.addLayout(status_layout)
         else:
-            # Belum dikumpulkan
             submit_layout = QVBoxLayout()
             submit_layout.setSpacing(5)
             
-            # Cek apakah deadline sudah lewat (telat)
             try:
                 today = datetime.now()
                 deadline_dt = datetime.strptime(deadline_date, '%Y-%m-%d')
                 if deadline_dt < today:
                     warning_label = QLabel("⚠️ PERINGATAN: Deadline sudah lewat! Silakan segera kumpulkan tugas.")
                     warning_label.setObjectName("warningLabel")
-                    warning_label.setStyleSheet("color: #EF4444; font-weight: bold; background-color: #FEE2E2; padding: 6px; border-radius: 6px;")
                     submit_layout.addWidget(warning_label)
             except:
                 pass
@@ -468,11 +442,9 @@ class DetailMatakuliahPage(QWidget):
         return card
     
     def edit_submission(self, tugas_id, tugas):
-        """Edit/re-upload submission"""
         self.show_tugas_detail(tugas_id, tugas, is_edit=True)
     
     def delete_submission(self, tugas_id):
-        """Delete submission"""
         reply = QMessageBox.question(
             self, "Konfirmasi", 
             "Apakah Anda yakin ingin menghapus pengumpulan tugas ini?\n\n"
@@ -508,26 +480,18 @@ class DetailMatakuliahPage(QWidget):
         deadline_date = tugas.get('deadline_date', '-')
         deadline_time = tugas.get('deadline_time', '23:59')
         
-        # Tampilkan deadline dengan warning jika lewat
-        deadline_layout = QHBoxLayout()
         deadline_label = QLabel(f"📅 Tenggat: {deadline_date} {deadline_time} WIB")
         deadline_label.setObjectName("deadlineLabel")
         
-        # Cek apakah deadline sudah lewat
         today = datetime.now()
         try:
             deadline_dt = datetime.strptime(f"{deadline_date} {deadline_time}", '%Y-%m-%d %H:%M:%S')
             if deadline_dt < today:
                 deadline_label.setStyleSheet("color: #EF4444; font-weight: bold;")
-                warning_icon = QLabel("⚠️")
-                warning_icon.setStyleSheet("color: #EF4444; font-size: 14px;")
-                deadline_layout.addWidget(warning_icon)
         except:
             pass
         
-        deadline_layout.addWidget(deadline_label)
-        deadline_layout.addStretch()
-        layout.addLayout(deadline_layout)
+        layout.addWidget(deadline_label)
         
         desc_label = QLabel("Deskripsi Tugas:")
         desc_label.setObjectName("sectionLabel")
@@ -538,13 +502,11 @@ class DetailMatakuliahPage(QWidget):
         deskripsi.setObjectName("deskripsiBox")
         layout.addWidget(deskripsi)
         
-        # Show current file if editing
         current_submission = self.submissions.get(tugas_id)
         if current_submission and is_edit:
             submitted_at = self._format_datetime(current_submission.get('submitted_at', '-'))
             current_file_label = QLabel(f"📎 File saat ini: {current_submission.get('file_name', '-')}\n📅 Dikumpulkan: {submitted_at}")
-            current_file_label.setObjectName("sectionLabel")
-            current_file_label.setStyleSheet("color: #10B981; margin-top: 10px; padding: 8px; background-color: #F0FDF4; border-radius: 8px;")
+            current_file_label.setObjectName("currentFileLabel")
             layout.addWidget(current_file_label)
         
         upload_frame = QFrame()
@@ -556,7 +518,7 @@ class DetailMatakuliahPage(QWidget):
         upload_layout.addWidget(self.selected_file_label, 1)
         
         upload_btn = QPushButton("📂 Pilih File")
-        upload_btn.setObjectName("small_btn")
+        upload_btn.setObjectName("smallBtn")
         upload_btn.clicked.connect(self.select_file)
         upload_layout.addWidget(upload_btn)
         layout.addWidget(upload_frame)
@@ -578,12 +540,12 @@ class DetailMatakuliahPage(QWidget):
         btn_layout.addStretch()
         
         cancel_btn = QPushButton("Batal")
-        cancel_btn.setObjectName("secondary_btn")
+        cancel_btn.setObjectName("secondaryBtn")
         cancel_btn.clicked.connect(dialog.reject)
         
         submit_text = "Update Tugas" if is_edit else "Kumpulkan Tugas"
         submit_btn = QPushButton(f"📤 {submit_text}")
-        submit_btn.setObjectName("primary_btn")
+        submit_btn.setObjectName("primaryBtn")
         submit_btn.clicked.connect(lambda: self.submit_tugas(dialog, tugas_id, is_edit))
         
         btn_layout.addWidget(cancel_btn)
@@ -662,5 +624,3 @@ class DetailMatakuliahPage(QWidget):
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-                
-                
