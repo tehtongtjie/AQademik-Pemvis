@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from ui.mahasiswa.widgets import StatCircleCard, TugasCard, CourseCard
-from database.db_manager import get_all_tasks, get_user_enrolled_courses
+from database.db_manager import get_personal_tasks, get_enrolled_courses, get_courses, get_course_by_id
 
 
 class DashboardPage(QWidget):
@@ -24,47 +24,30 @@ class DashboardPage(QWidget):
         main_layout.setContentsMargins(30, 25, 30, 25)
         main_layout.setSpacing(20)
         
-        # Header dengan greeting
         header = QHBoxLayout()
-        
         name = self.user_data.get('nama', 'Mahasiswa')
         greeting = QLabel(f"Hello, {name}!")
-        greeting.setStyleSheet("font-size: 24px; font-weight: bold; color: #1E293B;")
+        greeting.setObjectName("greetingLabel")
         header.addWidget(greeting)
-        
         header.addStretch()
         
-        # Search bar
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("🔍 Cari mata kuliah...")
         self.search_input.setFixedWidth(280)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #FFFFFF;
-                border: 1.5px solid #E2E8F0;
-                border-radius: 12px;
-                padding: 10px 16px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1.5px solid #3B82F6;
-            }
-        """)
         self.search_input.textChanged.connect(self.filter_courses)
         header.addWidget(self.search_input)
-        
         main_layout.addLayout(header)
         
-        # Konten bagian atas: dua kotak (stat + tugas aktif)
-        top_content = QHBoxLayout()
-        top_content.setSpacing(20)
+        top_row = QHBoxLayout()
+        top_row.setSpacing(20)
+        top_row.setAlignment(Qt.AlignTop)
         
-        # Kiri: Diag tgs selesai
         self.stat_circle = StatCircleCard("Progress Tugas", "#3B82F6")
         self.stat_circle.setMinimumHeight(220)
-        top_content.addWidget(self.stat_circle)
+        self.stat_circle.setMaximumHeight(250)
+        self.stat_circle.setFixedWidth(220)
+        top_row.addWidget(self.stat_circle)
         
-        # Kanan: List mata kuliah tugas
         active_tasks_group = QGroupBox("📋 Tugas Aktif per Mata Kuliah")
         active_tasks_group.setStyleSheet("""
             QGroupBox {
@@ -74,6 +57,7 @@ class DashboardPage(QWidget):
                 font-weight: bold;
                 font-size: 14px;
                 padding-top: 16px;
+                margin-top: 0px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -83,28 +67,26 @@ class DashboardPage(QWidget):
         """)
         
         active_tasks_layout = QVBoxLayout(active_tasks_group)
+        active_tasks_layout.setContentsMargins(10, 10, 10, 10)
         
-        # Scroll area untuk tugas aktif
         self.active_tasks_scroll = QScrollArea()
         self.active_tasks_scroll.setWidgetResizable(True)
         self.active_tasks_scroll.setFrameShape(QFrame.NoFrame)
-        self.active_tasks_scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
-        self.active_tasks_scroll.setMaximumHeight(300)
+        self.active_tasks_scroll.setMaximumHeight(250)
+        self.active_tasks_scroll.setMinimumHeight(200)
         
         self.active_tasks_container = QWidget()
-        self.active_tasks_layout = QVBoxLayout(self.active_tasks_container)
-        self.active_tasks_layout.setSpacing(10)
-        self.active_tasks_layout.setContentsMargins(10, 10, 10, 10)
-        self.active_tasks_layout.setAlignment(Qt.AlignTop)
+        self.active_tasks_layout_inner = QVBoxLayout(self.active_tasks_container)
+        self.active_tasks_layout_inner.setSpacing(10)
+        self.active_tasks_layout_inner.setContentsMargins(10, 5, 10, 5)
+        self.active_tasks_layout_inner.setAlignment(Qt.AlignTop)
         
         self.active_tasks_scroll.setWidget(self.active_tasks_container)
         active_tasks_layout.addWidget(self.active_tasks_scroll)
         
-        top_content.addWidget(active_tasks_group, 1)
+        top_row.addWidget(active_tasks_group, 1)
+        main_layout.addLayout(top_row)
         
-        main_layout.addLayout(top_content)
-        
-        # Matkul
         courses_group = QGroupBox("📚 Daftar Mata Kuliah")
         courses_group.setStyleSheet("""
             QGroupBox {
@@ -114,6 +96,7 @@ class DashboardPage(QWidget):
                 font-weight: bold;
                 font-size: 14px;
                 padding-top: 16px;
+                margin-top: 0px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -123,52 +106,34 @@ class DashboardPage(QWidget):
         """)
         
         courses_layout = QVBoxLayout(courses_group)
+        courses_layout.setContentsMargins(10, 10, 10, 10)
         
-        # Filter toggle
         filter_layout = QHBoxLayout()
+        filter_layout.setSpacing(10)
         filter_layout.addWidget(QLabel("Filter:"))
         
         self.show_all_btn = QPushButton("📚 Semua Mata Kuliah")
         self.show_all_btn.setCheckable(True)
         self.show_all_btn.setCursor(Qt.PointingHandCursor)
+        self.show_all_btn.setFixedHeight(32)
         self.show_all_btn.clicked.connect(lambda: self.set_filter(show_all=True))
-        self.show_all_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #F1F5F9;
-                color: #64748B;
-                border-radius: 20px;
-                padding: 6px 16px;
-                font-weight: 500;
-                border: none;
-            }
-        """)
         filter_layout.addWidget(self.show_all_btn)
         
         self.show_taking_btn = QPushButton("📖 Sedang Diambil")
         self.show_taking_btn.setCheckable(True)
         self.show_taking_btn.setChecked(True)
         self.show_taking_btn.setCursor(Qt.PointingHandCursor)
+        self.show_taking_btn.setFixedHeight(32)
         self.show_taking_btn.clicked.connect(lambda: self.set_filter(show_all=False))
-        self.show_taking_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EFF6FF;
-                color: #3B82F6;
-                border-radius: 20px;
-                padding: 6px 16px;
-                font-weight: 500;
-                border: none;
-            }
-        """)
         filter_layout.addWidget(self.show_taking_btn)
         
         filter_layout.addStretch()
         courses_layout.addLayout(filter_layout)
         
-        # Scroll area untuk daftar mata kuliah
         self.courses_scroll = QScrollArea()
         self.courses_scroll.setWidgetResizable(True)
         self.courses_scroll.setFrameShape(QFrame.NoFrame)
-        self.courses_scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
+        self.courses_scroll.setMinimumHeight(300)
         
         self.courses_container = QWidget()
         self.courses_grid = QGridLayout(self.courses_container)
@@ -196,75 +161,63 @@ class DashboardPage(QWidget):
         if not self.user_id:
             return
         
-        # Ambil data tugas dari database
-        self.tasks_data = get_all_tasks(self.user_id)
+        success, tasks = get_personal_tasks(self.user_id)
+        if success:
+            self.tasks_data = tasks
+        else:
+            self.tasks_data = []
         
-        # Hitung statistik
         total = len(self.tasks_data)
         done = len([t for t in self.tasks_data if t.get('status') == 'Done'])
-        
-        # Update stat circle
         self.stat_circle.update_stats(done, total)
         
-        # Tugas aktif (belum selesai)
         active_tasks = [t for t in self.tasks_data if t.get('status') != 'Done']
-        active_tasks.sort(key=lambda x: x.get('deadline', '9999-12-31'))
+        active_tasks.sort(key=lambda x: x.get('deadline_date', '9999-12-31'))
         
-        # Clear container
-        self._clear_layout(self.active_tasks_layout)
+        self._clear_layout(self.active_tasks_layout_inner)
         
-        # Tampilkan tugas aktif per mata kuliah
         matkul_tasks = {}
         for task in active_tasks:
-            matkul = task.get('matkul', 'Unknown')
+            matkul = task.get('course_name', 'Unknown')
             if matkul not in matkul_tasks:
                 matkul_tasks[matkul] = []
             matkul_tasks[matkul].append(task)
         
         for matkul, tasks in matkul_tasks.items():
             matkul_label = QLabel(f"📚 {matkul}")
-            matkul_label.setStyleSheet("font-weight: bold; font-size: 13px; padding: 8px 0px;")
-            self.active_tasks_layout.addWidget(matkul_label)
+            matkul_label.setStyleSheet("font-weight: bold; font-size: 13px; padding: 8px 0px 4px 0px;")
+            self.active_tasks_layout_inner.addWidget(matkul_label)
             
             for task in tasks:
                 tugas_card = TugasCard(
-                    task.get('tugas', '-'), 
-                    task.get('matkul', '-'),
-                    task.get('deadline', '-'), 
+                    task.get('judul', '-'), 
+                    task.get('course_name', '-'),
+                    task.get('deadline_date', '-'), 
                     task.get('status', 'Pending'),
                     task.get('priority', 'Medium')
                 )
-                self.active_tasks_layout.addWidget(tugas_card)
+                self.active_tasks_layout_inner.addWidget(tugas_card)
         
         if not active_tasks:
             empty_label = QLabel("✨ Tidak ada tugas aktif. Selamat! ✨")
             empty_label.setAlignment(Qt.AlignCenter)
             empty_label.setStyleSheet("color: #94A3B8; padding: 30px;")
-            self.active_tasks_layout.addWidget(empty_label)
+            self.active_tasks_layout_inner.addWidget(empty_label)
         
-        # Load daftar mata kuliah
         self.load_courses()
     
     def load_courses(self):
-        from database.db_manager import get_all_courses
+        success, enrolled = get_enrolled_courses(self.user_id)
+        if success and enrolled:
+            self.enrolled_courses = {item['courses']['nama'] for item in enrolled if item.get('courses')}
+        else:
+            self.enrolled_courses = set()
         
-        # Ambil mata kuliah yang sudah di-enroll
-        enrolled = get_user_enrolled_courses(self.user_id)
-        self.enrolled_courses = {c['nama'] for c in enrolled}
-        
-        # Ambil semua mata kuliah dari database
-        db_courses = get_all_courses()
-        
-        # Konversi ke format yang digunakan dashboard
-        self.all_courses = []
-        for course in db_courses:
-            self.all_courses.append({
-                "id": course['id'],
-                "nama": course['nama'],
-                "sks": course['sks'],
-                "dosen": course['dosen'],
-                "taking": course['id'] in [c['id'] for c in enrolled]  # enrolled = taking
-            })
+        success, courses = get_courses()
+        if success:
+            self.all_courses = courses
+        else:
+            self.all_courses = []
         
         self.filter_courses()
     
@@ -273,56 +226,58 @@ class DashboardPage(QWidget):
         filtered = []
         
         for course in self.all_courses:
-            if not self.show_all and not course['taking']:
+            course_nama = course.get('nama', '') if isinstance(course, dict) else ''
+            course_dosen = course.get('dosen', '') if isinstance(course, dict) else ''
+            
+            if not self.show_all and course_nama not in self.enrolled_courses:
                 continue
-            if search_text and search_text not in course['nama'].lower() and search_text not in course['dosen'].lower():
+            if search_text and search_text not in course_nama.lower() and search_text not in course_dosen.lower():
                 continue
             filtered.append(course)
         
         self._clear_grid(self.courses_grid)
-        
-        # Set grid alignment agar tidak stretch
         self.courses_grid.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         
         for i, course in enumerate(filtered):
-            row = i
-            col = 0
-            is_enrolled = course['nama'] in self.enrolled_courses
+            course_nama = course.get('nama', '') if isinstance(course, dict) else ''
+            course_sks = course.get('sks', 3) if isinstance(course, dict) else 3
+            course_dosen = course.get('dosen', '') if isinstance(course, dict) else ''
+            is_enrolled = course_nama in self.enrolled_courses
+            
             card = CourseCard(
-                course['nama'], course['sks'], 
-                course['dosen'], course['taking'], is_enrolled
+                course_nama, course_sks, 
+                course_dosen, is_enrolled, is_enrolled
             )
-            card.setMinimumWidth(400)  
-            card.setMaximumWidth(600)  
+            card.setMinimumWidth(400)
+            card.setMaximumWidth(600)
             card.setCursor(Qt.PointingHandCursor)
             card.set_click_callback(lambda c=course: self.open_course_detail(c))
-            self.courses_grid.addWidget(card, row, col, Qt.AlignTop | Qt.AlignLeft)
+            self.courses_grid.addWidget(card, i, 0, Qt.AlignTop | Qt.AlignLeft)
         
         if not filtered:
             empty_label = QLabel("✨ Tidak ada mata kuliah yang ditemukan ✨")
             empty_label.setAlignment(Qt.AlignCenter)
             empty_label.setStyleSheet("color: #94A3B8; padding: 50px;")
             self.courses_grid.addWidget(empty_label, 0, 0, 1, 1, Qt.AlignCenter)
-        
+    
     def open_course_detail(self, course):
         from ui.mahasiswa.detail_matakuliah_page import DetailMatakuliahPage
         
-        # Cek apakah sudah terdaftar
-        is_enrolled = course['nama'] in self.enrolled_courses
+        course_nama = course.get('nama', '') if isinstance(course, dict) else ''
+        course_id = course.get('id', 0) if isinstance(course, dict) else 0
+        is_enrolled = course_nama in self.enrolled_courses
         
         parent = self.parent()
         while parent and not hasattr(parent, 'content_stack'):
             parent = parent.parent()
         
         if parent and hasattr(parent, 'content_stack'):
-            # Cari data course lengkap dari database
-            from database.db_manager import get_course_by_id
-            full_course = get_course_by_id(course['id'])
-            if full_course:
-                self.detail_page = DetailMatakuliahPage(full_course, is_enrolled)
+            success, full_course = get_course_by_id(course_id)
+            if success and full_course:
+                self.detail_page = DetailMatakuliahPage(full_course, is_enrolled, self.user_id)
                 parent.content_stack.addWidget(self.detail_page)
                 parent.content_stack.setCurrentWidget(self.detail_page)
-            
+    
     def refresh_data(self):
         self.load_data()
     
@@ -337,6 +292,3 @@ class DashboardPage(QWidget):
             child = grid.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-    
-    def refresh_data(self):
-        self.load_data()

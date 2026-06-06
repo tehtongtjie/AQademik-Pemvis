@@ -3,13 +3,15 @@ from PySide6.QtWidgets import (
     QPushButton, QMessageBox, QFrame
 )
 from PySide6.QtCore import Qt
+from database.db_manager import enroll_course
 
 
 class EnrollmentDialog(QDialog):
-    def __init__(self, course_name, expected_code="", parent=None):
+    def __init__(self, course_name, enroll_code, user_id, parent=None):
         super().__init__(parent)
         self.course_name = course_name
-        self.expected_code = expected_code
+        self.enroll_code = enroll_code
+        self.user_id = user_id
         self.setWindowTitle(f"Join Mata Kuliah - {course_name}")
         self.setModal(True)
         self.setMinimumWidth(450)
@@ -20,7 +22,6 @@ class EnrollmentDialog(QDialog):
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(25, 25, 25, 25)
         
-        # Icon
         icon_label = QLabel("🔑")
         icon_label.setAlignment(Qt.AlignCenter)
         icon_label.setStyleSheet("font-size: 48px;")
@@ -42,16 +43,14 @@ class EnrollmentDialog(QDialog):
         info_layout = QVBoxLayout(info_frame)
         
         info_text = QLabel(
-            "Silakan masukkan kode enrollment yang diberikan oleh dosen pengampu mata kuliah ini.\n\n"
-            f"💡 Petunjuk: Kode enrollment untuk {self.course_name} adalah {self.expected_code}"
+            "Silakan masukkan kode enrollment yang diberikan oleh dosen.\n\n"
+            f"💡 Kode enrollment untuk {self.course_name}: {self.enroll_code}"
         )
         info_text.setWordWrap(True)
         info_text.setStyleSheet("color: #64748B; font-size: 12px;")
         info_layout.addWidget(info_text)
-        
         main_layout.addWidget(info_frame)
         
-        # Input kode enrollment
         input_frame = QFrame()
         input_frame.setStyleSheet("""
             QFrame {
@@ -64,15 +63,8 @@ class EnrollmentDialog(QDialog):
         
         self.code_input = QLineEdit()
         self.code_input.setPlaceholderText("Masukkan kode enrollment...")
-        self.code_input.setStyleSheet("""
-            QLineEdit {
-                border: none;
-                padding: 12px;
-                font-size: 14px;
-            }
-        """)
+        self.code_input.setStyleSheet("QLineEdit { border: none; padding: 12px; font-size: 14px; }")
         input_layout.addWidget(self.code_input)
-        
         main_layout.addWidget(input_frame)
         
         btn_layout = QHBoxLayout()
@@ -97,12 +89,10 @@ class EnrollmentDialog(QDialog):
             QMessageBox.warning(self, "Validasi Gagal", "Silakan masukkan kode enrollment!")
             return
         
-        if code == self.expected_code:
+        success, message = enroll_course(self.user_id, code)
+        
+        if success:
+            QMessageBox.information(self, "Berhasil", message)
             self.accept()
         else:
-            QMessageBox.warning(
-                self, "Kode Salah", 
-                f"❌ Kode enrollment '{code}' tidak valid.\n\n"
-                f"Kode yang benar untuk {self.course_name} adalah: {self.expected_code}\n\n"
-                "Silakan coba lagi atau hubungi dosen pengampu."
-            )
+            QMessageBox.warning(self, "Gagal", message)

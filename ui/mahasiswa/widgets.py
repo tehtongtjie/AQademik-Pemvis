@@ -17,7 +17,6 @@ class StatCircleCard(QFrame):
         self.title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.title_label)
         
-        # Container untuk progress
         self.progress_container = QWidget()
         self.progress_container.setFixedSize(120, 120)
         progress_layout = QVBoxLayout(self.progress_container)
@@ -54,7 +53,7 @@ class CourseCard(QFrame):
     def __init__(self, course_name, sks, lecturer, is_taking=True, is_enrolled=False, parent=None):
         super().__init__(parent)
         self.setObjectName("courseCard")
-        self.is_enrolled = is_enrolled or is_taking  # Enrolled jika sudah taking atau sudah join
+        self.is_enrolled = is_enrolled or is_taking
         self.course_name = course_name
         self.sks = sks
         self.lecturer = lecturer
@@ -68,31 +67,27 @@ class CourseCard(QFrame):
         self.name_label = QLabel(course_name)
         self.name_label.setObjectName("courseCardTitle")
         header_layout.addWidget(self.name_label)
-        
         header_layout.addStretch()
         
         sks_label = QLabel(f"{sks} SKS")
         sks_label.setObjectName("courseCardSKS")
         header_layout.addWidget(sks_label)
-        
         layout.addLayout(header_layout)
         
-        # Lecturer
         lecturer_label = QLabel(f"👨‍🏫 {lecturer}")
         lecturer_label.setObjectName("courseCardLecturer")
         layout.addWidget(lecturer_label)
         
-        # Status badge
         if is_taking:
-            status_badge = QLabel("● Sedang Diambil")
+            status_badge = QLabel("✅ Terdaftar")
             status_badge.setObjectName("badgeTaking")
         else:
-            status_badge = QLabel("○ Belum Diambil")
+            status_badge = QLabel("🔒 Belum Terdaftar")
             status_badge.setObjectName("badgeNotTaking")
         
         status_badge.setAlignment(Qt.AlignRight)
         layout.addWidget(status_badge)
-        
+    
     def mousePressEvent(self, event):
         if hasattr(self, 'click_callback'):
             self.click_callback()
@@ -115,7 +110,6 @@ class TugasCard(QFrame):
         header_layout = QHBoxLayout()
         header_layout.setSpacing(10)
         
-        # Expand button
         self.expand_btn = QPushButton("▶")
         self.expand_btn.setObjectName("expandBtn")
         self.expand_btn.setFixedSize(24, 24)
@@ -123,69 +117,58 @@ class TugasCard(QFrame):
         self.expand_btn.clicked.connect(self.toggle_expand)
         header_layout.addWidget(self.expand_btn)
         
-        # Tugas 
         name_label = QLabel(tugas_name)
         name_label.setObjectName("tugasCardTitle")
         header_layout.addWidget(name_label, 2)
         
-        # Matkul
         matkul_label = QLabel(matkul_name)
         matkul_label.setObjectName("tugasCardMatkul")
         header_layout.addWidget(matkul_label, 1)
         
-        # Deadline
         deadline_label = QLabel(f"📅 {deadline}")
         deadline_label.setObjectName("tugasCardDeadline")
         header_layout.addWidget(deadline_label, 1)
         
-        # Priority badge
-        priority_colors = {"High": "#e74c3c", "Medium": "#f39c12", "Low": "#2ecc71"}
+        priority_colors = {"High": "#EF4444", "Medium": "#F59E0B", "Low": "#10B981"}
         priority_badge = QLabel(priority)
         priority_badge.setObjectName("priorityBadge")
-        priority_badge.setStyleSheet(f"background-color: {priority_colors.get(priority, '#95a5a6')}; color: white; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 600;")
+        priority_badge.setStyleSheet(f"background-color: {priority_colors.get(priority, '#95a5a6')}; color: white;")
         priority_badge.setAlignment(Qt.AlignCenter)
         priority_badge.setFixedWidth(70)
         header_layout.addWidget(priority_badge)
         
-        # Status badge
         status_colors = {
-            "Pending": "#f39c12", "Not Started": "#e74c3c", 
-            "Doing": "#3498db", "Done": "#2ecc71"
+            "Pending": "#F59E0B", "Not Started": "#EF4444", 
+            "Doing": "#3B82F6", "Done": "#10B981"
         }
         status_badge = QLabel(status)
         status_badge.setObjectName("statusBadge")
-        status_badge.setStyleSheet(f"background-color: {status_colors.get(status, '#95a5a6')}; color: white; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 600;")
+        status_badge.setStyleSheet(f"background-color: {status_colors.get(status, '#95a5a6')}; color: white;")
         status_badge.setAlignment(Qt.AlignCenter)
         status_badge.setFixedWidth(100)
         header_layout.addWidget(status_badge)
         
         layout.addLayout(header_layout)
         
-        # Expanded content
         self.expand_content = QWidget()
         self.expand_content.setVisible(False)
         expand_layout = QVBoxLayout(self.expand_content)
         expand_layout.setContentsMargins(40, 10, 10, 10)
         expand_layout.setSpacing(8)
         
-        # Deskripsi
         desc_label = QLabel(f"📝 Deskripsi: {self._get_description(tugas_name)}")
         desc_label.setObjectName("tugasCardDesc")
         desc_label.setWordWrap(True)
         expand_layout.addWidget(desc_label)
         
-        # Waktu deadline detail
         time_label = QLabel(f"⏰ Tenggat: {deadline} 23:59 WIB")
         time_label.setObjectName("tugasCardDetail")
         expand_layout.addWidget(time_label)
         
         layout.addWidget(self.expand_content)
         
-        # Store data
         self.tugas_name = tugas_name
         self.deadline = deadline
-        self.priority = priority
-        self.status = status
     
     def _get_description(self, tugas_name):
         if "Tugas" in tugas_name:
@@ -201,13 +184,4 @@ class TugasCard(QFrame):
         self.is_expanded = not self.is_expanded
         self.expand_content.setVisible(self.is_expanded)
         self.expand_btn.setText("▼" if self.is_expanded else "▶")
-        
         self.updateGeometry()
-    
-    def mousePressEvent(self, event):
-        if hasattr(self, 'click_callback'):
-            self.click_callback()
-        super().mousePressEvent(event)
-    
-    def set_click_callback(self, callback):
-        self.click_callback = callback

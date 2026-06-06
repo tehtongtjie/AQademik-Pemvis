@@ -15,27 +15,31 @@ class MahasiswaMainWindow(QMainWindow):
     def __init__(self, user_data=None):
         super().__init__()
         self.user_data = user_data or {}
-        if 'id' not in self.user_data and 'id' in user_data:
-            self.user_data['id'] = user_data['id']
+        self.user_id = user_data.get('id') if user_data else None
         print(f"[DEBUG] MahasiswaMainWindow user_data: {self.user_data}")
         self.setWindowTitle("AkademiQ - Dashboard Mahasiswa")
         self.setMinimumSize(1300, 750)
-        self.setStyleSheet("""QMainWindow {background-color: #F8FAFC;}""")
         self.setup_ui()
         self.load_mahasiswa_stylesheet()
         self.load_user_info()
         db_signals.data_changed.connect(self.on_data_changed)
     
     def on_data_changed(self):
-        self.dashboard_page.refresh_data()
-        self.tugas_page.load_data()
+        if hasattr(self, 'dashboard_page'):
+            self.dashboard_page.refresh_data()
+        if hasattr(self, 'tugas_page'):
+            self.tugas_page.load_data()
+        if hasattr(self, 'matakuliah_page'):
+            self.matakuliah_page.refresh_data()
+        if hasattr(self, 'profile_page'):
+            self.profile_page.refresh_data()
     
     def load_mahasiswa_stylesheet(self):
         style_path = os.path.join(os.path.dirname(__file__), "style.qss")
         if os.path.exists(style_path):
             try:
                 with open(style_path, "r", encoding="utf-8") as f:
-                    self.setStyleSheet(self.styleSheet() + f.read())
+                    self.setStyleSheet(f.read())
                 print(f"[SUKSES] Mahasiswa QSS dimuat dari: {style_path}")
             except Exception as e:
                 print(f"[ERROR] Gagal membaca QSS mahasiswa: {e}")
@@ -52,13 +56,13 @@ class MahasiswaMainWindow(QMainWindow):
         self.setup_sidebar()
         main_layout.addWidget(self.sidebar)
         
+        # Content 
         self.content_stack = QStackedWidget()
-        self.content_stack.setStyleSheet("background-color: #F8FAFC;")
+        self.content_stack.setObjectName("rightPanel")
         
-        # Inisialisasi pages 
         self.dashboard_page = DashboardPage(self.user_data)
         self.tugas_page = TugasPage(self.user_data)
-        self.matakuliah_page = MatakuliahPage(self.user_data)  # Kirim user_data
+        self.matakuliah_page = MatakuliahPage(self.user_data)
         self.profile_page = ProfilePage(self.user_data)
         
         self.content_stack.addWidget(self.dashboard_page)
@@ -67,156 +71,126 @@ class MahasiswaMainWindow(QMainWindow):
         self.content_stack.addWidget(self.profile_page)
         
         main_layout.addWidget(self.content_stack, 1)
-        
-        # Set default page
         self.content_stack.setCurrentWidget(self.dashboard_page)
     
     def setup_sidebar(self):
-        self.sidebar = QFrame()
-        self.sidebar.setObjectName("sidebar")
-        self.sidebar.setFixedWidth(280)
-        self.sidebar.setStyleSheet("""
-            QFrame#sidebar {
-                background-color: #FFFFFF;
-                border-right: 1px solid #E2E8F0;
-            }
-        """)
+        self.sidebar = QWidget()
+        self.sidebar.setObjectName("leftPanel")
+        self.sidebar.setFixedWidth(360)
         
-        sidebar_layout = QVBoxLayout(self.sidebar)
-        sidebar_layout.setContentsMargins(20, 30, 20, 30)
-        sidebar_layout.setSpacing(20)
+        root_layout = QVBoxLayout(self.sidebar)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
         
-        # Logo nanti
-        logo_label = QLabel("🎓 AkademiQ")
-        logo_label.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #1E293B;
-            padding: 10px 0px 20px 0px;
-        """)
-        sidebar_layout.addWidget(logo_label)
+        container = QWidget()
+        container.setObjectName("leftPanel")
         
-        nav_layout = QVBoxLayout()
-        nav_layout.setSpacing(8)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(40, 48, 40, 48)
+        layout.setSpacing(0)
         
-        # Simpan reference buttons untuk styling
-        self.nav_buttons = []
+        logo_frame = QFrame()
+        logo_frame.setObjectName("logoFrame")
+        logo_frame.setFixedSize(54, 54)
         
-        nav_items = [
-            ("📊", "Dashboard", 0),
-            ("📋", "Tugas", 1),
-            ("📚", "Mata Kuliah", 2),
-            ("👤", "Profil", 3),
-        ]
+        logo_label = QLabel("AQ", logo_frame)
+        logo_label.setObjectName("logoLabel")
+        logo_label.setAlignment(Qt.AlignCenter)
+        logo_label.setGeometry(0, 0, 54, 54)
         
-        for icon, text, index in nav_items:
-            btn = QPushButton(f"  {icon}  {text}")
-            btn.setObjectName("navButton")
-            btn.setCheckable(True)
+        layout.addWidget(logo_frame)
+        layout.addSpacing(20)
+        
+        app_name = QLabel("AkademiQ")
+        app_name.setObjectName("appName")
+        layout.addWidget(app_name)
+        layout.addSpacing(8)
+        
+        tagline = QLabel("Platform manajemen akademik terpadu untuk mahasiswa.")
+        tagline.setObjectName("tagline")
+        tagline.setWordWrap(True)
+        layout.addWidget(tagline)
+        layout.addSpacing(30)
+        
+        menu_title = QLabel("MENU")
+        menu_title.setObjectName("menuHeader")
+        layout.addWidget(menu_title)
+        layout.addSpacing(10)
+        
+        self.btn_dashboard = QPushButton("🏠 Dashboard")
+        self.btn_tugas = QPushButton("📋 Tugas")
+        self.btn_matkul = QPushButton("📚 Mata Kuliah")
+        self.btn_profil = QPushButton("👤 Profil")
+        self.btn_logout = QPushButton("🚪 Logout")
+        
+        for btn in [self.btn_dashboard, self.btn_tugas, self.btn_matkul, self.btn_profil]:
+            btn.setObjectName("btnSecondary")
             btn.setCursor(Qt.PointingHandCursor)
-            btn.setFixedHeight(48)
-            btn.clicked.connect(lambda checked, idx=index: self.switch_page(idx))
-            btn.setStyleSheet("""
-                QPushButton#navButton {
-                    text-align: left;
-                    padding: 12px 16px;
-                    border-radius: 12px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    color: #64748B;
-                    background-color: transparent;
-                    border: none;
-                }
-                QPushButton#navButton:hover {
-                    background-color: #F1F5F9;
-                    color: #1E293B;
-                }
-                QPushButton#navButton:checked {
-                    background-color: #EFF6FF;
-                    color: #3B82F6;
-                }
-            """)
-            nav_layout.addWidget(btn)
-            self.nav_buttons.append(btn)
+            layout.addWidget(btn)
+            layout.addSpacing(8)
         
-        # Set default checked
-        if self.nav_buttons:
-            self.nav_buttons[0].setChecked(True)
+        layout.addStretch()
         
-        sidebar_layout.addLayout(nav_layout)
-        sidebar_layout.addStretch()
+        self.btn_logout.setObjectName("btnSecondary")
+        self.btn_logout.setCursor(Qt.PointingHandCursor)
+        layout.addWidget(self.btn_logout)
+        layout.addSpacing(16)
         
-        # User info di sidebar bottom
-        user_frame = QFrame()
-        user_frame.setStyleSheet("""
-            QFrame {
-                background-color: #F8FAFC;
-                border-radius: 16px;
-                padding: 12px;
-            }
-        """)
-        user_layout = QHBoxLayout(user_frame)
+        version = QLabel("Kelompok 4 · v1.0.0")
+        version.setObjectName("versionLabel")
+        layout.addWidget(version)
         
-        self.avatar_label = QLabel("👨‍🎓")
-        self.avatar_label.setStyleSheet("font-size: 32px;")
-        user_layout.addWidget(self.avatar_label)
+        root_layout.addWidget(container)
         
-        user_text_layout = QVBoxLayout()
-        self.user_name_label = QLabel("Mahasiswa")
-        self.user_name_label.setStyleSheet("font-weight: bold; color: #1E293B;")
-        self.user_role_label = QLabel("Mahasiswa")
-        self.user_role_label.setStyleSheet("font-size: 11px; color: #94A3B8;")
-        user_text_layout.addWidget(self.user_name_label)
-        user_text_layout.addWidget(self.user_role_label)
-        user_layout.addLayout(user_text_layout)
+        # Connect buttons
+        self.btn_dashboard.clicked.connect(lambda: self.switch_page(0))
+        self.btn_tugas.clicked.connect(lambda: self.switch_page(1))
+        self.btn_matkul.clicked.connect(lambda: self.switch_page(2))
+        self.btn_profil.clicked.connect(lambda: self.switch_page(3))
+        self.btn_logout.clicked.connect(self.logout)
         
-        user_layout.addStretch()
-        
-        sidebar_layout.addWidget(user_frame)
-        
-        # Logout button
-        logout_btn = QPushButton("🚪 Logout")
-        logout_btn.setObjectName("logoutBtn")
-        logout_btn.setCursor(Qt.PointingHandCursor)
-        logout_btn.setFixedHeight(44)
-        logout_btn.clicked.connect(self.logout)
-        logout_btn.setStyleSheet("""
-            QPushButton#logoutBtn {
-                background-color: #FEF2F2;
-                color: #DC2626;
-                border-radius: 12px;
-                font-weight: 600;
-                border: none;
-                padding: 12px;
-            }
-            QPushButton#logoutBtn:hover {
-                background-color: #FEE2E2;
-            }
-        """)
-        sidebar_layout.addWidget(logout_btn)
+        # Set active style for dashboard button
+        self.btn_dashboard.setObjectName("btnPrimary")
     
     def load_user_info(self):
-        """Load user info ke sidebar"""
         if self.user_data:
             name = self.user_data.get('nama', 'Mahasiswa')
-            self.user_name_label.setText(name[:20] + "..." if len(name) > 20 else name)
-            self.user_role_label.setText("Mahasiswa")
-            self.avatar_label.setText("👨‍🎓")
+            # Update user info di sidebar jika diperlukan
+            pass
     
     def switch_page(self, index):
         self.content_stack.setCurrentIndex(index)
-        for i, btn in enumerate(self.nav_buttons):
-            btn.setChecked(i == index)
         
-        # Refresh page content when switching
-        if index == 0:  # Dashboard
+        # Reset all button styles
+        for btn in [self.btn_dashboard, self.btn_tugas, self.btn_matkul, self.btn_profil]:
+            btn.setObjectName("btnSecondary")
+        
+        # Set active button style
+        active_btn = [self.btn_dashboard, self.btn_tugas, self.btn_matkul, self.btn_profil][index]
+        active_btn.setObjectName("btnPrimary")
+        
+        # Refresh data on switch
+        if index == 0:
             self.dashboard_page.refresh_data()
-        elif index == 1:  # Tugas
+        elif index == 1:
             self.tugas_page.load_data()
-        elif index == 2:  # Mata Kuliah
-            self.matakuliah_page.filter_courses()
-        elif index == 3:  # Profil
+        elif index == 2:
+            self.matakuliah_page.refresh_data()
+        elif index == 3:
             self.profile_page.load_profile()
+    
+    def show_course_detail(self, course_data, is_enrolled=False):
+        from ui.mahasiswa.detail_matakuliah_page import DetailMatakuliahPage
+        self.detail_page = DetailMatakuliahPage(
+            course_data, 
+            is_enrolled=is_enrolled, 
+            user_id=self.user_id
+        )
+        self.content_stack.addWidget(self.detail_page)
+        self.content_stack.setCurrentWidget(self.detail_page)
+    
+    def go_back_to_courses(self):
+        self.content_stack.setCurrentWidget(self.matakuliah_page)
     
     def logout(self):
         reply = QMessageBox.question(
@@ -226,12 +200,3 @@ class MahasiswaMainWindow(QMainWindow):
         )
         if reply == QMessageBox.Yes:
             self.close()
-            
-    def show_course_detail(self, course_data):
-        from ui.mahasiswa.detail_matakuliah_page import DetailMatakuliahPage
-        self.detail_page = DetailMatakuliahPage(course_data)
-        self.content_stack.addWidget(self.detail_page)
-        self.content_stack.setCurrentWidget(self.detail_page)
-    
-    def go_back_to_courses(self):
-        self.content_stack.setCurrentWidget(self.matakuliah_page)
