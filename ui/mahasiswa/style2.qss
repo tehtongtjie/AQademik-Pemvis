@@ -1,0 +1,564 @@
+/* global */
+* {
+    font-family: 'Segoe UI', 'SF Pro Display', -apple-system, sans-serif;
+}
+
+QWidget {
+    background-color: #F8FAFC;
+    color: #1E293B;
+}
+
+/* main window */
+QMainWindow {
+    background-color: #F8FAFC;
+}
+
+/* sidebar */
+QFrame#sidebar {
+    background-color: #FFFFFF;
+    border-right: 1px solid #E2E8F0;
+}
+
+QLabel#logoLabel {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1E293B;
+    padding: 10px 0px 20px 0px;
+}
+
+/* Navigation Buttons */
+QPushButton#navButton {
+    text-align: left;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748B;
+    background-color: transparent;
+    border: none;
+}
+
+QPushButton#navButton:hover {
+    background-color: #F1F5F9;
+    color: #1E293B;
+}
+
+QPushButton#navButton:checked {
+    background-color: #EFF6FF;
+    color: #3B82F6;
+}
+
+/* Logout Button */
+QPushButton#logoutBtn {
+    background-color: #FEF2F2;
+    color: #DC2626;
+    border-radius: 12px;
+    font-weight: 600;
+    border: none;
+    padding: 12px;
+}
+
+QPushButton#logoutBtn:hover {
+    background-color: #FEE2E2;
+}
+
+/* stat cardnya dashboard */
+QFrame#statCircleCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+
+QLabel#statCircleTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #64748B;
+}
+
+QLabel#statCirclePercent {
+    font-size: 32px;
+    font-weight: bold;
+    color: #3B82F6;
+}
+
+QLabel#statCircleSub {
+    font-size: 12px;
+    color: #94A3B8;
+}
+
+/* group box */
+QGroupBox {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    font-weight: bold;
+    font-size: 14px;
+    padding-top: 16px;
+    margin-top: 8px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 16px;
+    padding: 0 8px;
+    color: #1E293B;
+}
+
+/* card course */
+QFrame#courseCard {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    padding: 12px;
+}
+
+QFrame#courseCard:hover {
+    border: 1px solid #3B82F6;
+    background-color: #F8FAFC;
+}
+
+QLabel#courseCardTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+QLabel#courseCardSKS {
+    font-size: 12px;
+    font-weight: 500;
+    color: #3B82F6;
+    background-color: #EFF6FF;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+QLabel#courseCardLecturer {
+    font-size: 12px;
+    color: #64748B;
+}
+
+QLabel#badgeTaking {
+    font-size: 11px;
+    font-weight: 600;
+    color: #10B981;
+    background-color: #D1FAE5;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+QLabel#badgeNotTaking {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94A3B8;
+    background-color: #F1F5F9;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* card tugas */
+QFrame#tugasCard {
+    background-color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+}
+
+QLabel#tugasCardTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+QLabel#tugasCardMatkul {
+    font-size: 12px;
+    color: #64748B;
+}
+
+QLabel#tugasCardDeadline {
+    font-size: 12px;
+    color: #EF4444;
+}
+
+QLabel#tugasCardDesc {
+    font-size: 12px;
+    color: #64748B;
+    padding: 8px;
+    background-color: #FFFFFF;
+    border-radius: 8px;
+}
+
+QLabel#tugasCardDetail {
+    font-size: 11px;
+    color: #94A3B8;
+}
+
+QPushButton#expandBtn {
+    background-color: transparent;
+    border: none;
+    font-size: 12px;
+    color: #3B82F6;
+}
+
+QPushButton#expandBtn:hover {
+    color: #2563EB;
+}
+
+/* Priority Badge */
+QLabel#priorityBadge {
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Status Badge */
+QLabel#statusBadge {
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* style tabel */
+QTableWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    gridline-color: #F1F5F9;
+    selection-background-color: #EFF6FF;
+}
+
+QTableWidget::item {
+    padding: 10px 8px;
+    color: #1E293B;
+}
+
+QTableWidget::item:selected {
+    color: #1E293B;
+}
+
+QHeaderView::section {
+    background-color: #F8FAFC;
+    color: #64748B;
+    padding: 12px;
+    border: none;
+    border-bottom: 2px solid #E2E8F0;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* button */
+QPushButton#primary_btn {
+    background-color: #3B82F6;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QPushButton#primary_btn:hover {
+    background-color: #2563EB;
+}
+
+QPushButton#secondary_btn {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+QPushButton#secondary_btn:hover {
+    background-color: #E2E8F0;
+    color: #1E293B;
+}
+
+QPushButton#small_btn {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 500;
+    font-size: 11px;
+}
+
+QPushButton#small_btn:hover {
+    background-color: #E2E8F0;
+}
+
+/* Filter Buttons */
+QPushButton#filterBtn {
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-weight: 500;
+    border: none;
+}
+
+/* search */
+QLineEdit {
+    background-color: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #1E293B;
+}
+
+QLineEdit:focus {
+    border: 1.5px solid #3B82F6;
+    outline: none;
+}
+
+QLineEdit::placeholder {
+    color: #94A3B8;
+}
+
+QComboBox {
+    background-color: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #1E293B;
+    min-width: 120px;
+}
+
+QComboBox:hover {
+    border: 1.5px solid #CBD5E1;
+}
+
+QComboBox:focus {
+    border: 1.5px solid #3B82F6;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #94A3B8;
+    margin-right: 8px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 4px;
+    selection-background-color: #EFF6FF;
+    selection-color: #3B82F6;
+}
+
+/* scroll bar */
+QScrollBar:vertical {
+    background-color: #F1F5F9;
+    width: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #94A3B8;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #F1F5F9;
+    height: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+    min-width: 30px;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* scroll area */
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+/* profile */
+QFrame#profileCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+
+QFrame#scheduleCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+
+QFrame#courseCardSmall {
+    background-color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    padding: 10px;
+}
+
+QFrame#courseCardSmall:hover {
+    background-color: #F1F5F9;
+    border: 1px solid #3B82F6;
+}
+
+QLabel#courseNameSmall {
+    font-size: 13px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QLabel#courseTimeSmall {
+    font-size: 11px;
+    color: #64748B;
+}
+
+QLabel#courseRoomSmall {
+    font-size: 11px;
+    color: #3B82F6;
+}
+
+QTableWidget#scheduleTable {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    gridline-color: #F1F5F9;
+}
+
+QTableWidget#scheduleTable::item {
+    padding: 10px 8px;
+}
+
+QTableWidget#scheduleTable::item:selected {
+    background-color: #EFF6FF;
+}
+
+QLabel#noScheduleLabel {
+    color: #94A3B8;
+    padding: 30px;
+    font-size: 13px;
+}
+
+QLabel#avatarLabel {
+    font-size: 55px;
+    background: transparent;
+}
+
+QLabel#infoLabel {
+    color: #64748B;
+    font-weight: 500;
+}
+
+QLabel#infoValue {
+    color: #1E293B;
+}
+
+QLabel#nameBig {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+/* detail matkul */
+QFrame#courseDetailCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+    padding: 20px;
+}
+
+QFrame#materiCard {
+    background-color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    padding: 15px;
+}
+
+QFrame#materiCard:hover {
+    background-color: #F1F5F9;
+}
+
+QFrame#tugasDetailCard {
+    background-color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    padding: 15px;
+}
+
+/* status */
+QStatusBar {
+    background-color: #FFFFFF;
+    color: #64748B;
+    padding: 4px;
+    border-top: 1px solid #E2E8F0;
+}
+
+/* messagebox */
+QMessageBox {
+    background-color: #FFFFFF;
+}
+
+QMessageBox QPushButton {
+    min-width: 80px;
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+/* tooltip */
+QToolTip {
+    background-color: #1E293B;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+/* dialog style */
+QDialog {
+    background-color: #FFFFFF;
+}
+
+QLabel#dialogTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QDialogButtonBox {
+    padding: 10px;
+}
+
+QDialogButtonBox QPushButton {
+    min-width: 80px;
+}
+
+/* card chart */
+QFrame#chartCard {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+}

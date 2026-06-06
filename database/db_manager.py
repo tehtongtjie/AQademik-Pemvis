@@ -413,6 +413,18 @@ def submit_tugas(assignment_id: int, user_id: int, file_path: str, catatan: str 
         file_name    = os.path.basename(file_path)
         storage_path = f"submissions/{user_id}/{assignment_id}/{file_name}"
 
+        # Cek apakah file sudah ada di storage
+        try:
+            existing = supabase.storage.from_("tugas-files").list(path=f"submissions/{user_id}/{assignment_id}/")
+            # Jika file sudah ada, hapus dulu
+            for f in existing:
+                if f['name'] == file_name:
+                    supabase.storage.from_("tugas-files").remove([storage_path])
+                    break
+        except:
+            pass
+
+        # Upload file baru
         with open(file_path, "rb") as f:
             supabase.storage.from_("tugas-files").upload(
                 path=storage_path,
@@ -449,6 +461,74 @@ def submit_tugas(assignment_id: int, user_id: int, file_path: str, catatan: str 
 
     except Exception as e:
         return False, f"Terjadi kesalahan: {e}"
+
+
+# Alias agar kompatibel dengan kode teman
+submit_assignment = submit_tugas
+
+
+def update_submission(submission_id: int, user_id: int, file_path: str, catatan: str = ""):
+    """Update existing submission (re-upload)"""
+    import os
+    try:
+        file_name = os.path.basename(file_path)
+        storage_path = f"submissions/{user_id}/{submission_id}/{file_name}"
+        
+        # Cek apakah file sudah ada di storage
+        try:
+            supabase.storage.from_("tugas-files").remove([storage_path])
+        except:
+            pass
+        
+        # Upload file baru
+        with open(file_path, "rb") as f:
+            supabase.storage.from_("tugas-files").upload(
+                path=storage_path,
+                file=f,
+                file_options={"content-type": "application/pdf"}
+            )
+        
+        file_url = supabase.storage.from_("tugas-files").get_public_url(storage_path)
+        
+        # Update submission record
+        supabase.table("submissions").update({
+            "file_path": storage_path,
+            "file_url": file_url,
+            "file_name": file_name,
+            "catatan": catatan,
+            "submitted_at": "now()",
+            "status": "submitted"
+        }).eq("id", submission_id).eq("user_id", user_id).execute()
+        
+        return True, "Tugas berhasil diupdate!"
+    except Exception as e:
+        return False, str(e)
+
+
+def delete_submission(assignment_id: int, user_id: int):
+    """Delete submission by assignment_id and user_id"""
+    try:
+        # Get submission record first
+        res = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
+        if not res.data:
+            return False, "Submission tidak ditemukan"
+        
+        submission = res.data[0]
+        storage_path = submission.get("file_path")
+        
+        # Delete file from storage if exists
+        if storage_path:
+            try:
+                supabase.storage.from_("tugas-files").remove([storage_path])
+            except Exception as e:
+                print(f"Error deleting file: {e}")
+        
+        # Delete submission record
+        supabase.table("submissions").delete().eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
+        
+        return True, "Pengumpulan tugas berhasil dihapus!"
+    except Exception as e:
+        return False, str(e)
 
 # Alias agar kompatibel dengan kode teman
 submit_assignment = submit_tugas
@@ -640,7 +720,66 @@ def hapus_personal_task(task_id: int, user_id: int):
     except Exception as e:
         return False, str(e)
 
+def get_all_user_tasks(user_id: int):
+    # 1. Get personal tasks
+    success, personal_tasks = get_personal_tasks(user_id)
+    if not success:
+        personal_tasks = []
+    
+    # 2. Get enrolled courses with course details
+    success, enrolled = get_enrolled_courses_with_details(user_id)
+    enrolled_courses = []
+    if success and enrolled:
+        enrolled_courses = enrolled
+    
+    # 3. Get assignments from enrolled courses
+    course_tasks = []
+    for course in enrolled_courses:
+        course_id = course.get('id')
+        course_name = course.get('nama', 'Mata Kuliah')
+        
+        # Get assignments for this course
+        success, assignments = get_assignments(course_id)
+        if success and assignments:
+            for task in assignments:
+                # Check if user has submitted this assignment
+                success, submission = get_user_submission(task['id'], user_id)
+                is_submitted = success and submission
+                
+                # Get nilai if exists
+                nilai = submission.get('nilai', '-') if submission else '-'
+                
+                course_tasks.append({
+                    'id': task['id'],
+                    'judul': task.get('judul', ''),
+                    'course_name': course_name,
+                    'deskripsi': task.get('deskripsi', ''),
+                    'deadline_date': task.get('deadline_date', ''),
+                    'priority': 'Medium',
+                    'status': 'Done' if is_submitted else 'Not Started',
+                    'source': 'dosen',
+                    'submission': submission if is_submitted else None,
+                    'nilai': nilai
+                })
+    
+    # 4. Combine and sort by deadline
+    all_tasks = personal_tasks + course_tasks
+    all_tasks.sort(key=lambda x: x.get('deadline_date', '9999-12-31'))
+    
+    return True, all_tasks
 
+
+def get_enrolled_courses_with_details(user_id: int):
+    try:
+        res = supabase.table("enrollments").select("courses(*)").eq("user_id", user_id).eq("status", "active").execute()
+        courses = []
+        for item in res.data:
+            if item.get('courses'):
+                courses.append(item['courses'])
+        return True, courses
+    except Exception as e:
+        return False, str(e)
+    
 # ==========================================================================
 # ─── SIGNALS ──────────────────────────────────────────────────────────────
 # ==========================================================================

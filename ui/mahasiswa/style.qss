@@ -1,0 +1,900 @@
+* {
+    font-family: 'Segoe UI', 'SF Pro Display', -apple-system, sans-serif;
+}
+
+QMainWindow, QWidget {
+    background-color: #F8FAFC;
+    color: #334155;
+}
+
+/* ============================================
+   SIDEBAR (Left Panel)
+   ============================================ */
+QWidget#leftPanel {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #E0F2FE, stop:0.5 #F3E8FF, stop:1 #E0E7FF);
+    border-right: 1px solid #E2E8F0;
+}
+
+QFrame#logoFrame {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F472B6, stop:1 #38BDF8);
+    border-radius: 14px;
+}
+
+QLabel#logoLabel {
+    color: white;
+    font-size: 22px;
+    font-weight: 800;
+    background: transparent;
+}
+
+QLabel#appName {
+    color: #1E293B;
+    font-size: 26px;
+    font-weight: 800;
+    background: transparent;
+}
+
+QLabel#tagline {
+    color: #475569;
+    font-size: 13px;
+    line-height: 18px;
+    background: transparent;
+}
+
+QLabel#menuHeader {
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: transparent;
+}
+
+QLabel#versionLabel {
+    color: #94A3B8;
+    font-size: 11px;
+    background: transparent;
+}
+
+/* ============================================
+   RIGHT PANEL
+   ============================================ */
+QWidget#rightPanel {
+    background-color: #F8FAFC;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+QPushButton {
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 20px;
+    border: none;
+}
+
+QPushButton#btnPrimary {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    color: #FFFFFF;
+}
+
+QPushButton#btnPrimary:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #38BDF8, stop:1 #A855F7);
+}
+
+QPushButton#btnSecondary {
+    background-color: transparent;
+    color: #6366F1;
+    border: 1.5px solid #DDD6FE;
+}
+
+QPushButton#btnSecondary:hover {
+    color: #4F46E5;
+    background-color: #EEF2FF;
+    border: 1.5px solid #818CF8;
+}
+
+QPushButton#small_btn {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 11px;
+}
+
+QPushButton#small_btn:hover {
+    background-color: #E2E8F0;
+}
+
+/* Back Button */
+QPushButton#backBtn {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 8px 16px;
+    text-align: left;
+}
+
+QPushButton#backBtn:hover {
+    background-color: #E2E8F0;
+    color: #1E293B;
+}
+
+/* Download & Submit Button */
+QPushButton#downloadBtn, QPushButton#submitBtn {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QPushButton#downloadBtn:hover, QPushButton#submitBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #38BDF8, stop:1 #A855F7);
+}
+
+/* Expand Button */
+QPushButton#expandBtn {
+    background-color: transparent;
+    border: none;
+    font-size: 12px;
+    color: #6366F1;
+}
+
+QPushButton#expandBtn:hover {
+    color: #4F46E5;
+}
+
+/* Tab Buttons */
+QPushButton#tabBtnLeft {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QPushButton#tabBtnLeftActive {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    color: white;
+    border: none;
+    border-radius: 12px 0 0 12px;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QPushButton#tabBtnRight {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QPushButton#tabBtnRightActive {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    color: white;
+    border: none;
+    border-radius: 0 12px 12px 0;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* ============================================
+   INPUT FIELDS
+   ============================================ */
+QLineEdit, QComboBox {
+    background-color: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #334155;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border: 1.5px solid #38BDF8;
+}
+
+QLineEdit::placeholder {
+    color: #94A3B8;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #94A3B8;
+}
+
+/* ============================================
+   CARDS & GROUP BOX
+   ============================================ */
+QGroupBox {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    font-weight: bold;
+    font-size: 14px;
+    padding-top: 16px;
+    margin-top: 8px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 16px;
+    padding: 0 8px;
+    color: #1E293B;
+}
+
+QFrame#profileCard, QFrame#scheduleCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+
+QFrame#courseCard, QFrame#courseCardSmall {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    padding: 12px;
+}
+
+QFrame#courseCard:hover, QFrame#courseCardSmall:hover {
+    border: 1px solid #38BDF8;
+    background-color: #F8FAFC;
+}
+
+/* Info Card Detail */
+QFrame#infoCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+
+QFrame#contentCard {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+}
+
+/* Materi & Tugas Item Card */
+QFrame#materiItemCard, QFrame#tugasItemCard {
+    background-color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+}
+
+QFrame#materiItemCard:hover, QFrame#tugasItemCard:hover {
+    background-color: #F1F5F9;
+    border: 1px solid #38BDF8;
+}
+
+/* Enrollment Card */
+QFrame#enrollmentCard {
+    background-color: #FEF3C7;
+    border-radius: 20px;
+    border: 1px solid #FDE68A;
+}
+
+/* Gradient Line */
+QFrame#gradientLine {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    border-radius: 1px;
+    min-height: 2px;
+    max-height: 2px;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+QTableWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    gridline-color: #F1F5F9;
+    selection-background-color: #EFF6FF;
+}
+
+QTableWidget::item {
+    padding: 10px 8px;
+    color: #334155;
+}
+
+QHeaderView::section {
+    background-color: #F8FAFC;
+    color: #64748B;
+    padding: 12px;
+    border: none;
+    border-bottom: 2px solid #E2E8F0;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* ============================================
+   STAT CIRCLE CARD
+   ============================================ */
+QFrame#statCircleCard {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+
+QLabel#statCircleTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #64748B;
+}
+
+QLabel#statCirclePercent {
+    font-size: 32px;
+    font-weight: bold;
+    color: #6366F1;
+}
+
+QLabel#statCircleSub {
+    font-size: 12px;
+    color: #94A3B8;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+QLabel#badgeTaking {
+    font-size: 11px;
+    font-weight: 600;
+    color: #10B981;
+    background-color: #D1FAE5;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+QLabel#badgeNotTaking {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94A3B8;
+    background-color: #F1F5F9;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+QLabel#priorityBadge, QLabel#statusBadge {
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QLabel#sksBadge {
+    color: #6366F1;
+    background-color: #EFF6FF;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+/* ============================================
+   TUGAS CARD (Dashboard)
+   ============================================ */
+QFrame#tugasCard {
+    background-color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+}
+
+QLabel#tugasCardTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+QLabel#tugasCardMatkul {
+    font-size: 12px;
+    color: #64748B;
+}
+
+QLabel#tugasCardDeadline {
+    font-size: 12px;
+    color: #EF4444;
+}
+
+QLabel#tugasCardDesc {
+    font-size: 12px;
+    color: #64748B;
+    padding: 8px;
+    background-color: #FFFFFF;
+    border-radius: 8px;
+}
+
+QLabel#tugasCardDetail {
+    font-size: 11px;
+    color: #94A3B8;
+}
+
+/* ============================================
+   DETAIL PAGE LABELS
+   ============================================ */
+QLabel#courseDetailTitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QLabel#courseNameLabel {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QLabel#lecturerLabel {
+    color: #64748B;
+    font-size: 13px;
+}
+
+QLabel#deskripsiText {
+    color: #64748B;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 5px 0;
+}
+
+QLabel#materiJudul, QLabel#tugasJudul {
+    font-weight: bold;
+    color: #1E293B;
+    font-size: 14px;
+}
+
+QLabel#materiDeskripsi {
+    font-size: 11px;
+    color: #64748B;
+}
+
+QLabel#tugasDeskripsi {
+    font-size: 12px;
+    color: #64748B;
+}
+
+QLabel#submittedStatus {
+    color: #10B981;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+QLabel#emptyLabel {
+    color: #94A3B8;
+    padding: 30px;
+    font-size: 13px;
+}
+
+QLabel#warningTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #92400E;
+}
+
+QLabel#warningMessage {
+    color: #92400E;
+    font-size: 13px;
+}
+
+QLabel#enrollmentIcon {
+    font-size: 48px;
+}
+
+QLabel#enrollmentTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #92400E;
+}
+
+/* ============================================
+   DIALOG
+   ============================================ */
+QDialog {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+}
+
+QLabel#dialogTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QLabel#deadlineLabel {
+    color: #EF4444;
+    padding: 5px 0;
+    font-size: 13px;
+}
+
+QLabel#sectionLabel {
+    font-weight: bold;
+    color: #1E293B;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+QLabel#deskripsiBox {
+    color: #64748B;
+    padding: 10px;
+    background-color: #F8FAFC;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+QFrame#uploadFrame {
+    background-color: #F8FAFC;
+    border-radius: 8px;
+    border: 1px dashed #CBD5E1;
+    padding: 10px;
+}
+
+QLabel#selectedFileLabel {
+    color: #64748B;
+    font-size: 12px;
+}
+
+/* ============================================
+   PROFILE PAGE
+   ============================================ */
+QLabel#profileTitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QFrame#avatarContainer {
+    background-color: #EFF6FF;
+    border-radius: 60px;
+}
+
+QLabel#avatarLabel {
+    font-size: 55px;
+    background: transparent;
+}
+
+QLabel#nameBig {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QLabel#infoLabel {
+    color: #64748B;
+    font-weight: 500;
+}
+
+QLabel#infoValue {
+    color: #334155;
+}
+
+QLabel#cardTitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+/* ============================================
+   DASHBOARD PAGE
+   ============================================ */
+QLabel#greetingLabel {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+/* ============================================
+   TUGAS PAGE
+   ============================================ */
+QLabel#pageTitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QWidget#statBadge {
+    background-color: white;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+}
+
+QLabel#statBadgeTitle {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748B;
+    border: none;
+}
+
+QLabel#statBadgeValue {
+    font-size: 28px;
+    font-weight: bold;
+    border: none;
+}
+
+/* ============================================
+   SCROLL BAR
+   ============================================ */
+QScrollBar:vertical {
+    background-color: #F1F5F9;
+    width: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #94A3B8;
+}
+
+QScrollBar:horizontal {
+    background-color: #F1F5F9;
+    height: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+    min-width: 30px;
+}
+
+/* ============================================
+   STATUS BAR
+   ============================================ */
+QStatusBar {
+    background-color: #FFFFFF;
+    color: #64748B;
+    padding: 4px;
+    border-top: 1px solid #E2E8F0;
+}
+
+/* ============================================
+   DETAIL MATA KULIAH PAGE - STATUS & NILAI
+   ============================================ */
+
+/* Status Labels */
+QLabel#statusDone {
+    color: #10B981;
+    font-weight: bold;
+    background-color: #D1FAE5;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+QLabel#statusLate {
+    color: #EF4444;
+    font-weight: bold;
+    background-color: #FEE2E2;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+/* Nilai Labels */
+QLabel#nilaiValue {
+    color: #10B981;
+    font-weight: bold;
+    background-color: #D1FAE5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+QLabel#nilaiPending {
+    color: #F59E0B;
+    font-weight: bold;
+    background-color: #FEF3C7;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+/* File Info */
+QLabel#fileInfo {
+    color: #64748B;
+    font-size: 11px;
+    padding: 2px 0;
+}
+
+/* Menu Button */
+QPushButton#menuBtn {
+    background-color: transparent;
+    color: #64748B;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+QPushButton#menuBtn:hover {
+    background-color: #E2E8F0;
+    border-radius: 6px;
+}
+
+/* Warning Label */
+QLabel#warningLabel {
+    color: #EF4444;
+    font-weight: bold;
+    background-color: #FEE2E2;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+/* Current File Label */
+QLabel#currentFileLabel {
+    color: #10B981;
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #F0FDF4;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+/* Small Button */
+QPushButton#smallBtn {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 11px;
+}
+
+QPushButton#smallBtn:hover {
+    background-color: #E2E8F0;
+}
+
+/* Secondary Button */
+QPushButton#secondaryBtn {
+    background-color: transparent;
+    color: #6366F1;
+    border: 1.5px solid #DDD6FE;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+QPushButton#secondaryBtn:hover {
+    color: #4F46E5;
+    background-color: #EEF2FF;
+    border: 1.5px solid #818CF8;
+}
+
+/* Primary Button */
+QPushButton#primaryBtn {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QPushButton#primaryBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #38BDF8, stop:1 #A855F7);
+}
+
+/* Dialog Labels */
+QLabel#dialogTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1E293B;
+}
+
+QLabel#deadlineLabel {
+    color: #EF4444;
+    padding: 5px 0;
+    font-size: 13px;
+}
+
+QLabel#sectionLabel {
+    font-weight: bold;
+    color: #1E293B;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+QLabel#deskripsiBox {
+    color: #64748B;
+    padding: 10px;
+    background-color: #F8FAFC;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+/* Upload Frame */
+QFrame#uploadFrame {
+    background-color: #F8FAFC;
+    border-radius: 8px;
+    border: 1px dashed #CBD5E1;
+    padding: 10px;
+}
+
+QLabel#selectedFileLabel {
+    color: #64748B;
+    font-size: 12px;
+}
+
+/* Materi & Tugas Item Card hover */
+QFrame#materiItemCard:hover, QFrame#tugasItemCard:hover {
+    background-color: #F1F5F9;
+    border: 1px solid #38BDF8;
+}
+
+/* Enrollment Warning Card */
+QFrame#enrollmentCard {
+    background-color: #FEF3C7;
+    border-radius: 20px;
+    border: 1px solid #FDE68A;
+}
+
+QLabel#enrollmentIcon {
+    font-size: 48px;
+}
+
+QLabel#enrollmentTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #92400E;
+}
+
+QLabel#enrollmentMessage {
+    color: #92400E;
+    font-size: 13px;
+}
+
+/* Tugas Card Deadline */
+QLabel#tugasDeadline {
+    font-size: 11px;
+    color: #EF4444;
+}
+
+/* Submitted Status */
+QLabel#submittedStatus {
+    color: #10B981;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Empty Label */
+QLabel#emptyLabel {
+    color: #94A3B8;
+    padding: 30px;
+    font-size: 13px;
+}
+
+/* Materi Icon */
+QLabel#materiIcon {
+    font-size: 24px;
+}
+
+/* Gradient Line */
+QFrame#gradientLine {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7DD3FC, stop:1 #C084FC);
+    border-radius: 1px;
+    min-height: 2px;
+    max-height: 2px;
+}

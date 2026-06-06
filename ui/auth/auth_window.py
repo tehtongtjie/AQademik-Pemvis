@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
 from ui.dosen.dashboard import DashboardDosen
+from ui.mahasiswa.main_window import MahasiswaMainWindow
 
 # ==========================================================================
 # ─── DATABASE INTEGRATION & FALLBACK MOCK ─────────────────────────────────
@@ -392,5 +393,9 @@ class AuthWindow(QMainWindow):
     def _on_login_success(self, user: dict):
         if user["role"] == "dosen":
             self.dashboard = DashboardDosen(user)
+            self.dashboard.show()
+            self.close()
+        if user["role"] == "mahasiswa":
+            self.dashboard = MahasiswaMainWindow(user)
             self.dashboard.show()
             self.close()
